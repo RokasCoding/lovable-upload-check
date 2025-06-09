@@ -25,7 +25,7 @@ const App = () => {
       // Update your auth context or state here
     });
     return () => {
-      listener?.unsubscribe();
+      listener?.subscription.unsubscribe();
     };
   }, []);
 
