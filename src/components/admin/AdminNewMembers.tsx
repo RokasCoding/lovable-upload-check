@@ -1,0 +1,99 @@
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar, Mail } from 'lucide-react';
+import { format } from 'date-fns';
+import { User } from '@/types';
+
+interface AdminNewMembersProps {
+  users: User[];
+  isLoading: boolean;
+  onAssignPrize: (userId: string, prizeId: string) => void;
+}
+
+export const AdminNewMembers: React.FC<AdminNewMembersProps> = ({ 
+  users, 
+  isLoading, 
+  onAssignPrize 
+}) => {
+  // Filter new members (registered in last 7 days)
+  const newMembers = users.filter(user => {
+    const registrationDate = new Date(user.createdAt || Date.now());
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return registrationDate > weekAgo;
+  });
+
+  return (
+    <Card className="bg-white border-gray-200 animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-black flex items-center">
+          <Calendar className="h-5 w-5 mr-2 text-vcs-blue" />
+          Nauji Nariai (Paskutinės 7 Dienos)
+        </CardTitle>
+        <CardDescription>Nauji nariai, kuriems reikia paskirti prizą</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full bg-gray-200" />
+            ))}
+          </div>
+        ) : newMembers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            Nėra naujų narių per pastarąsias 7 dienas
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="vcs-table">
+              <TableHeader>
+                <TableRow className="hover:bg-gray-50 border-black">
+                  <TableHead className="text-black font-bold">Vardas</TableHead>
+                  <TableHead className="text-black font-bold">El. paštas</TableHead>
+                  <TableHead className="text-black font-bold">Registracijos data</TableHead>
+                  <TableHead className="text-black font-bold">Taškai</TableHead>
+                  <TableHead className="text-black font-bold">Veiksmai</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {newMembers.map((user) => (
+                  <TableRow key={user.id} className="hover:bg-gray-50 border-black">
+                    <TableCell className="font-medium text-black">
+                      {user.name}
+                    </TableCell>
+                    <TableCell className="text-black">
+                      {user.email}
+                    </TableCell>
+                    <TableCell className="text-black">
+                      {format(new Date(user.createdAt || Date.now()), 'yyyy-MM-dd')}
+                    </TableCell>
+                    <TableCell>
+                      <span className="point-badge">{user.totalPoints}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white"
+                          onClick={() => onAssignPrize(user.id, '')}
+                        >
+                          <Mail className="h-4 w-4 mr-1" />
+                          Paskirti Prizą
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

@@ -1,13 +1,14 @@
-
 export type UserRole = 'admin' | 'user';
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   totalPoints: number;
   isVerified: boolean;
+  createdAt?: Date;
 }
 
 export interface BonusEntry {
