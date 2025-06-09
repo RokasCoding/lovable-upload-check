@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Prizes from "./pages/Prizes";
 import History from "./pages/History";
 import Admin from "./pages/Admin";
+import Rules from "./pages/Rules";
+import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/prizes" element={<Prizes />} />
             <Route path="/history" element={<History />} />
+            <Route path="/rules" element={<Rules />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

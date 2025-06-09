@@ -64,10 +64,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				vcs: {
-					green: '#7FC32E',
-					dark: '#1E2029',
-					darker: '#16171F',
-					gray: '#2B2C36',
+					white: '#ffffff',
+					black: '#020202',
+					blue: '#3535FF',
 				}
 			},
 			borderRadius: {
