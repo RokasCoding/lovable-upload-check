@@ -4,68 +4,71 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Save, X } from 'lucide-react';
+import { Edit, Save, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const Rules = () => {
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = user?.user_metadata?.role === 'admin';
   const { toast } = useToast();
   const [content, setContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
 
-  // Default rules content
-  const defaultContent = `# Taškų sistemos taisyklės
-
-## Bendrosios nuostatos
-
-1. **Taškų uždarbis**: Taškai skiriami už aktyvų dalyvavimą mokymų veiklose, projektų atlikimą ir kitus pasiekimus.
-
-2. **Taškų vertė**: Kiekvienas taškas turi nustatytą vertę, kuri gali keistis priklausomai nuo programos.
-
-3. **Prizų išsikeitimas**: Sukauptus taškus galima keisti į prizus pagal nustatytą taškų kainą.
-
-## Taškų skyrimo principai
-
-- **Projektų atlikimas**: 10-50 taškų priklausomai nuo sudėtingumo
-- **Aktyvus dalyvavimas**: 5-20 taškų už pamokas
-- **Papildomi uždaviniai**: 5-30 taškų
-- **Bendradarbiavimas**: 10-25 taškų už pagalbą kitiems
-
-## Taškų naudojimo taisyklės
-
-1. Taškai galioja visą programos trukmę
-2. Taškų perduoti kitiems negalima
-3. Prizų užsakymas vyksta per sistemą
-4. Prizų išdavimas koordinuojamas su administracija
-
-## Pažeidimų atvejai
-
-Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti taškų praradimą arba pašalinimą iš programos.`;
-
   useEffect(() => {
-    // Load content from localStorage or use default
-    const savedContent = localStorage.getItem('rules-content');
-    if (savedContent) {
-      setContent(savedContent);
-    } else {
-      setContent(defaultContent);
-    }
-  }, []);
+    const fetchContent = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('content')
+        .select('content')
+        .eq('page', 'rules')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Ignore 'exact one row not found'
+        console.error('Error fetching rules content:', error);
+        toast({
+          title: "Klaida",
+          description: "Nepavyko gauti taisyklių turinio.",
+          variant: "destructive",
+        });
+      } else if (data) {
+        setContent(data.content || 'Turinys nerastas.');
+      } else {
+        setContent('Turinys nerastas. Administratorius turi jį pridėti.');
+      }
+      setIsLoading(false);
+    };
+
+    fetchContent();
+  }, [toast]);
 
   const handleEdit = () => {
     setEditContent(content);
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    setContent(editContent);
-    localStorage.setItem('rules-content', editContent);
-    setIsEditing(false);
-    toast({
-      title: "Išsaugota",
-      description: "Taisyklės sėkmingai atnaujintos.",
-    });
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from('content')
+      .update({ content: editContent })
+      .eq('page', 'rules');
+
+    if (error) {
+      toast({
+        title: "Klaida",
+        description: "Nepavyko atnaujinti taisyklių. " + error.message,
+        variant: "destructive",
+      });
+    } else {
+      setContent(editContent);
+      setIsEditing(false);
+      toast({
+        title: "Išsaugota",
+        description: "Taisyklės sėkmingai atnaujintos.",
+      });
+    }
   };
 
   const handleCancel = () => {
@@ -117,7 +120,11 @@ Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti tašk�
             )}
           </CardHeader>
           <CardContent>
-            {isEditing ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center min-h-[600px]">
+                <Loader2 className="animate-spin h-10 w-10 text-primary" />
+              </div>
+            ) : isEditing ? (
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
@@ -125,7 +132,7 @@ Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti tašk�
                 placeholder="Įveskite taisyklių turinį..."
               />
             ) : (
-              <div className="prose prose-lg max-w-none">
+              <div className="prose prose-lg max-w-none dark:prose-invert">
                 {formatContent(content)}
               </div>
             )}
