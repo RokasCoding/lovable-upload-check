@@ -88,8 +88,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground">Premijos taškai</h1>
-          <p className="text-primary mt-2">Uždirbkite ir iškeiskite taškus už baigtus kursus</p>
+          <h1 className="text-4xl font-bold text-foreground">Vilnius Coding School Bonus Sistema</h1>
+          <p className="text-primary mt-2">Iškeiskite taškus į prizus</p>
         </div>
         
         <Card className="bg-background border-border shadow-lg">
