@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,8 +55,8 @@ const Login: React.FC = () => {
         setLoginPassword(registerPassword);
         
         toast({
-          title: "Registration Successful",
-          description: "Please log in with your new account.",
+          title: "Registracija sėkminga",
+          description: "Prašome prisijungti su nauja paskyra.",
         });
       }
     } finally {
@@ -104,47 +103,47 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-vcs-black">Bonus Points</h1>
-          <p className="text-vcs-blue mt-2">Earn and redeem points for completing courses</p>
+          <h1 className="text-4xl font-bold text-foreground">Premijos taškai</h1>
+          <p className="text-primary mt-2">Uždirbkite ir iškeiskite taškus už baigtus kursus</p>
         </div>
         
-        <Card className="bg-white border-2 border-vcs-black shadow-lg">
+        <Card className="bg-background border-border shadow-lg">
           <CardHeader>
-            <CardTitle className="text-vcs-black">Welcome</CardTitle>
-            <CardDescription className="text-gray-600">Sign in to your account or create a new one</CardDescription>
+            <CardTitle className="text-foreground">Sveiki atvykę</CardTitle>
+            <CardDescription className="text-muted-foreground">Prisijunkite prie savo paskyros arba sukurkite naują</CardDescription>
           </CardHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4 bg-gray-100 border border-gray-300">
-              <TabsTrigger value="login" className="text-vcs-black data-[state=active]:bg-white data-[state=active]:text-vcs-blue">Login</TabsTrigger>
-              <TabsTrigger value="register" className="text-vcs-black data-[state=active]:bg-white data-[state=active]:text-vcs-blue">Register</TabsTrigger>
-              <TabsTrigger value="forgot" className="text-vcs-black data-[state=active]:bg-white data-[state=active]:text-vcs-blue">Forgot</TabsTrigger>
+            <TabsList className="grid grid-cols-3 mb-4 bg-muted border-border">
+              <TabsTrigger value="login" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Prisijungimas</TabsTrigger>
+              <TabsTrigger value="register" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Registracija</TabsTrigger>
+              <TabsTrigger value="forgot" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Pamiršau</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-vcs-black font-medium" htmlFor="email">Email</label>
+                    <label className="text-sm text-foreground font-medium" htmlFor="email">El. paštas</label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com" 
+                      placeholder="jus@pvz.lt" 
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-vcs-black font-medium" htmlFor="password">Password</label>
+                    <label className="text-sm text-foreground font-medium" htmlFor="password">Slaptažodis</label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
@@ -152,10 +151,10 @@ const Login: React.FC = () => {
                 <CardFooter className="flex-col space-y-4">
                   <Button 
                     type="submit" 
-                    className="w-full bg-vcs-blue hover:bg-vcs-blue/90 text-white border-0"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Signing In...' : 'Sign In'}
+                    {isSubmitting ? 'Prisijungiama...' : 'Prisijungti'}
                   </Button>
                 </CardFooter>
               </form>
@@ -165,46 +164,46 @@ const Login: React.FC = () => {
               <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-name" className="text-vcs-black font-medium">Full Name</Label>
+                    <Label htmlFor="register-name" className="text-foreground font-medium">Vardas ir pavardė</Label>
                     <Input
                       id="register-name"
-                      placeholder="John Doe"
+                      placeholder="Jonas Jonaitis"
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-vcs-black font-medium">Email</Label>
+                    <Label htmlFor="register-email" className="text-foreground font-medium">El. paštas</Label>
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="jus@pvz.lt"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-password" className="text-vcs-black font-medium">Password</Label>
+                    <Label htmlFor="register-password" className="text-foreground font-medium">Slaptažodis</Label>
                     <Input
                       id="register-password"
                       type="password"
                       placeholder="••••••••"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-vcs-blue hover:bg-vcs-blue/90 text-white border-0" 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Registering...' : 'Register'}
+                    {isSubmitting ? 'Registruojama...' : 'Registruotis'}
                   </Button>
                 </form>
               </CardContent>
@@ -214,32 +213,32 @@ const Login: React.FC = () => {
               <CardContent>
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email" className="text-vcs-black font-medium">Email</Label>
+                    <Label htmlFor="reset-email" className="text-foreground font-medium">El. paštas</Label>
                     <Input
                       id="reset-email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="jus@pvz.lt"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="border-2 border-gray-300 focus:border-vcs-blue text-vcs-black"
+                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Button 
                       type="submit" 
-                      className="w-full bg-vcs-blue hover:bg-vcs-blue/90 text-white border-0" 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+                      {isSubmitting ? 'Siunčiama...' : 'Siųsti atstatymo nuorodą'}
                     </Button>
                     <Button 
                       type="button" 
                       variant="ghost" 
-                      className="text-vcs-black hover:bg-gray-100" 
+                      className="text-foreground hover:bg-muted" 
                       onClick={() => setActiveTab('login')}
                     >
-                      Back to Login
+                      Grįžti į prisijungimą
                     </Button>
                   </div>
                 </form>

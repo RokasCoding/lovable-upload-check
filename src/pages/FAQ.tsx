@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -90,19 +89,19 @@ A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudot
   const formatContent = (text: string) => {
     return text.split('\n').map((line, index) => {
       if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-3xl font-bold mb-6 text-vcs-black">{line.substring(2)}</h1>;
+        return <h1 key={index} className="text-3xl font-bold mb-6 text-foreground">{line.substring(2)}</h1>;
       } else if (line.startsWith('## Q: ')) {
-        return <h3 key={index} className="text-lg font-semibold mb-2 mt-6 text-vcs-blue">{line.substring(3)}</h3>;
+        return <h3 key={index} className="text-lg font-semibold mb-2 mt-6 text-primary">{line.substring(3)}</h3>;
       } else if (line.startsWith('A: ')) {
-        return <p key={index} className="mb-4 text-vcs-black pl-4">{line.substring(3)}</p>;
+        return <p key={index} className="mb-4 text-foreground pl-4">{line.substring(3)}</p>;
       } else if (line.startsWith('- ')) {
-        return <li key={index} className="ml-8 mb-1">{line.substring(2)}</li>;
+        return <li key={index} className="ml-8 mb-1 text-foreground">{line.substring(2)}</li>;
       } else if (line.match(/^\d+\./)) {
-        return <li key={index} className="ml-8 mb-1">{line}</li>;
+        return <li key={index} className="ml-8 mb-1 text-foreground">{line}</li>;
       } else if (line.trim() === '') {
         return <br key={index} />;
       } else {
-        return <p key={index} className="mb-2">{line}</p>;
+        return <p key={index} className="mb-2 text-foreground">{line}</p>;
       }
     });
   };
@@ -110,22 +109,22 @@ A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudot
   return (
     <Layout>
       <div className="container mx-auto px-6 py-8">
-        <Card className="vcs-table">
+        <Card className="bg-background border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-vcs-black">Dažnai užduodami klausimai</CardTitle>
+            <CardTitle className="text-foreground">Dažnai užduodami klausimai</CardTitle>
             {isAdmin && !isEditing && (
-              <Button onClick={handleEdit} variant="outline" className="border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white">
+              <Button onClick={handleEdit} variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 <Edit size={16} className="mr-2" />
                 Redaguoti
               </Button>
             )}
             {isAdmin && isEditing && (
               <div className="flex gap-2">
-                <Button onClick={handleSave} className="bg-vcs-blue hover:bg-vcs-blue/90">
+                <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Save size={16} className="mr-2" />
                   Išsaugoti
                 </Button>
-                <Button onClick={handleCancel} variant="outline">
+                <Button onClick={handleCancel} variant="outline" className="border-border text-foreground hover:bg-muted">
                   <X size={16} className="mr-2" />
                   Atšaukti
                 </Button>
@@ -137,7 +136,7 @@ A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudot
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[600px] font-mono border-vcs-black"
+                className="min-h-[600px] font-mono border-border focus:border-primary text-foreground"
                 placeholder="Įveskite D.U.K. turinį..."
               />
             ) : (

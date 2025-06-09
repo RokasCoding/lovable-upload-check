@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,13 +10,25 @@ import {
   createBonusEntry,
   inviteUser,
   createPrize,
-  processRedemption
+  processRedemption,
+  deductPoints,
+  getUserPointHistory
 } from '@/services/dataService';
-import { User, Prize, PrizeRedemption, Stats } from '@/types';
+import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Award, Link2 } from 'lucide-react';
+import { UserPlus, Award, Link2, MinusCircle, History } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 // Import the new components
 import { AdminStats } from '@/components/admin/AdminStats';
@@ -70,6 +81,17 @@ const Admin: React.FC = () => {
   const [linkPoints, setLinkPoints] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // New state variables for point deduction
+  const [deductPointsDialogOpen, setDeductPointsDialogOpen] = useState(false);
+  const [selectedUserForDeduction, setSelectedUserForDeduction] = useState<User | null>(null);
+  const [pointsToDeduct, setPointsToDeduct] = useState('');
+  const [deductionReason, setDeductionReason] = useState('');
+
+  // New state variables for point history
+  const [pointHistoryDialogOpen, setPointHistoryDialogOpen] = useState(false);
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null);
+  const [pointHistory, setPointHistory] = useState<BonusEntry[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) {
@@ -365,6 +387,72 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleDeductPoints = async () => {
+    if (!selectedUserForDeduction || !pointsToDeduct || !deductionReason) {
+      toast({
+        title: "Klaida",
+        description: "Prašome užpildyti visus privalomus laukus",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const points = parseInt(pointsToDeduct);
+    if (isNaN(points) || points <= 0) {
+      toast({
+        title: "Klaida",
+        description: "Taškai turi būti teigiamas skaičius",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await deductPoints(selectedUserForDeduction.id, points, deductionReason);
+      
+      toast({
+        title: "Sėkmė",
+        description: `Taškai sėkmingai atimti iš ${selectedUserForDeduction.name}`,
+      });
+
+      // Refresh users list
+      const updatedUsers = await getUsers();
+      setUsers(updatedUsers);
+
+      setDeductPointsDialogOpen(false);
+      setSelectedUserForDeduction(null);
+      setPointsToDeduct('');
+      setDeductionReason('');
+    } catch (error) {
+      console.error('Nepavyko atimti taškų:', error);
+      toast({
+        title: "Klaida",
+        description: error instanceof Error ? error.message : "Nepavyko atimti taškų",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleViewPointHistory = async (user: User) => {
+    setSelectedUserForHistory(user);
+    setPointHistoryDialogOpen(true);
+    
+    try {
+      const history = await getUserPointHistory(user.id);
+      setPointHistory(history);
+    } catch (error) {
+      console.error('Nepavyko gauti taškų istorijos:', error);
+      toast({
+        title: "Klaida",
+        description: "Nepavyko gauti taškų istorijos",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 bg-white min-h-screen">
@@ -419,14 +507,19 @@ const Admin: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="users">
-            <AdminUsers 
-              users={users} 
-              isLoading={isLoading} 
+            <AdminUsers
+              users={users}
+              isLoading={isLoading}
               onInviteUser={() => setInviteDialogOpen(true)}
               onAddBonus={(userId) => {
                 setBonusUserId(userId);
                 setNewBonusDialogOpen(true);
               }}
+              onDeductPoints={(user) => {
+                setSelectedUserForDeduction(user);
+                setDeductPointsDialogOpen(true);
+              }}
+              onViewHistory={(user) => handleViewPointHistory(user)}
             />
           </TabsContent>
           
@@ -505,6 +598,103 @@ const Admin: React.FC = () => {
 
         isProcessing={isProcessing}
       />
+
+      {/* New Point Deduction Dialog */}
+      <Dialog open={deductPointsDialogOpen} onOpenChange={setDeductPointsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atimti taškus</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Naudotojas</Label>
+              <Input
+                value={selectedUserForDeduction?.name || ''}
+                disabled
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Taškų kiekis</Label>
+              <Input
+                type="number"
+                value={pointsToDeduct}
+                onChange={(e) => setPointsToDeduct(e.target.value)}
+                placeholder="Įveskite taškų kiekį"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Priežastis</Label>
+              <Textarea
+                value={deductionReason}
+                onChange={(e) => setDeductionReason(e.target.value)}
+                placeholder="Įveskite priežastį"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeductPointsDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              Atšaukti
+            </Button>
+            <Button
+              onClick={handleDeductPoints}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Apdorojama..." : "Atimti taškus"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Point History Dialog */}
+      <Dialog open={pointHistoryDialogOpen} onOpenChange={setPointHistoryDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              Taškų istorija - {selectedUserForHistory?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="max-h-[400px] overflow-y-auto">
+              {pointHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`p-4 border rounded-lg mb-2 ${
+                    entry.pointsAwarded > 0 ? 'bg-green-50' : 'bg-red-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {entry.courseName}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(entry.createdAt).toLocaleString('lt-LT')}
+                      </p>
+                    </div>
+                    <p className={`font-medium ${
+                      entry.pointsAwarded > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {entry.pointsAwarded > 0 ? '+' : ''}{entry.pointsAwarded} taškų
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPointHistoryDialogOpen(false)}
+            >
+              Uždaryti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

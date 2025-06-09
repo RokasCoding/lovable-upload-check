@@ -1,4 +1,3 @@
-
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import { mockUsers, mockBonusEntries, mockPrizes, mockRedemptions, mockStats } from '@/data/mockData';
 
@@ -229,4 +228,47 @@ export const getStats = async (): Promise<Stats> => {
     topUsers,
     popularPrizes,
   };
+};
+
+// Point deduction function
+export const deductPoints = async (userId: string, points: number, reason: string): Promise<boolean> => {
+  await delay(400);
+  
+  const userIndex = users.findIndex(user => user.id === userId);
+  if (userIndex === -1) {
+    throw new Error('User not found');
+  }
+  
+  if (users[userIndex].totalPoints < points) {
+    throw new Error('User does not have enough points');
+  }
+  
+  // Create a bonus entry with negative points
+  const newEntry: BonusEntry = {
+    id: `entry-${Date.now()}`,
+    userId,
+    userName: users[userIndex].name,
+    courseName: reason,
+    price: 0,
+    pointsAwarded: -points,
+    createdAt: new Date(),
+  };
+  
+  bonusEntries.push(newEntry);
+  users[userIndex].totalPoints -= points;
+  
+  return true;
+};
+
+// Get user point history
+export const getUserPointHistory = async (userId: string): Promise<BonusEntry[]> => {
+  await delay(300);
+  
+  if (userId.startsWith('demo-')) {
+    return [];
+  }
+  
+  return bonusEntries
+    .filter(entry => entry.userId === userId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 };

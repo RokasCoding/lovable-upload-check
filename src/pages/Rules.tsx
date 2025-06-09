@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,17 +76,17 @@ Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti tašk�
   const formatContent = (text: string) => {
     return text.split('\n').map((line, index) => {
       if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-3xl font-bold mb-4 text-vcs-black">{line.substring(2)}</h1>;
+        return <h1 key={index} className="text-3xl font-bold mb-4 text-foreground">{line.substring(2)}</h1>;
       } else if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-2xl font-semibold mb-3 mt-6 text-vcs-blue">{line.substring(3)}</h2>;
+        return <h2 key={index} className="text-2xl font-semibold mb-3 mt-6 text-primary">{line.substring(3)}</h2>;
       } else if (line.startsWith('- ')) {
-        return <li key={index} className="ml-4 mb-1">{line.substring(2)}</li>;
+        return <li key={index} className="ml-4 mb-1 text-foreground">{line.substring(2)}</li>;
       } else if (line.trim() === '') {
         return <br key={index} />;
       } else if (line.match(/^\d+\./)) {
-        return <p key={index} className="mb-2 font-medium">{line}</p>;
+        return <p key={index} className="mb-2 font-medium text-foreground">{line}</p>;
       } else {
-        return <p key={index} className="mb-2">{line}</p>;
+        return <p key={index} className="mb-2 text-foreground">{line}</p>;
       }
     });
   };
@@ -95,22 +94,22 @@ Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti tašk�
   return (
     <Layout>
       <div className="container mx-auto px-6 py-8">
-        <Card className="vcs-table">
+        <Card className="bg-background border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-vcs-black">Taisyklės</CardTitle>
+            <CardTitle className="text-foreground">Taisyklės</CardTitle>
             {isAdmin && !isEditing && (
-              <Button onClick={handleEdit} variant="outline" className="border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white">
+              <Button onClick={handleEdit} variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 <Edit size={16} className="mr-2" />
                 Redaguoti
               </Button>
             )}
             {isAdmin && isEditing && (
               <div className="flex gap-2">
-                <Button onClick={handleSave} className="bg-vcs-blue hover:bg-vcs-blue/90">
+                <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Save size={16} className="mr-2" />
                   Išsaugoti
                 </Button>
-                <Button onClick={handleCancel} variant="outline">
+                <Button onClick={handleCancel} variant="outline" className="border-border text-foreground hover:bg-muted">
                   <X size={16} className="mr-2" />
                   Atšaukti
                 </Button>
@@ -122,7 +121,7 @@ Netinkamas taškų naudojimas ar bandymas manipuliuoti sistema gali lemti tašk�
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[600px] font-mono border-vcs-black"
+                className="min-h-[600px] font-mono border-border focus:border-primary text-foreground"
                 placeholder="Įveskite taisyklių turinį..."
               />
             ) : (

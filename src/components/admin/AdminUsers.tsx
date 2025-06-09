@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,30 +6,35 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { User } from '@/types';
+import { PlusCircle, MinusCircle, History } from 'lucide-react';
 
 interface AdminUsersProps {
   users: User[];
   isLoading: boolean;
   onInviteUser: () => void;
   onAddBonus: (userId: string) => void;
+  onDeductPoints: (user: User) => void;
+  onViewHistory: (user: User) => void;
 }
 
 export const AdminUsers: React.FC<AdminUsersProps> = ({ 
   users, 
   isLoading, 
   onInviteUser, 
-  onAddBonus 
+  onAddBonus,
+  onDeductPoints,
+  onViewHistory
 }) => {
   return (
-    <Card className="bg-white border-gray-200 animate-fade-in">
+    <Card className="bg-background border-border animate-fade-in">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-black">Naudotojų Valdymas</CardTitle>
-          <CardDescription>Valdyti naudotojų paskyras ir bonus taškus</CardDescription>
+          <CardTitle className="text-foreground">Naudotojų Valdymas</CardTitle>
+          <CardDescription className="text-muted-foreground">Valdyti naudotojų paskyras ir bonus taškus</CardDescription>
         </div>
         <Button 
           onClick={onInviteUser}
-          className="bg-vcs-blue hover:bg-vcs-blue/90"
+          className="bg-primary hover:bg-primary/90"
         >
           Pakviesti Naudotoją
         </Button>
@@ -39,59 +43,78 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full bg-gray-200" />
+              <Skeleton key={i} className="h-12 w-full bg-muted" />
             ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <Table className="vcs-table">
+            <Table>
               <TableHeader>
-                <TableRow className="hover:bg-gray-50 border-black">
-                  <TableHead className="text-black font-bold">Vardas</TableHead>
-                  <TableHead className="text-black font-bold">El. paštas</TableHead>
-                  <TableHead className="text-black font-bold">Telefonas</TableHead>
-                  <TableHead className="text-black font-bold">Rolė</TableHead>
-                  <TableHead className="text-black font-bold text-right">Taškai</TableHead>
-                  <TableHead className="text-black font-bold">Registracija</TableHead>
-                  <TableHead className="text-black font-bold">Veiksmai</TableHead>
+                <TableRow className="hover:bg-muted/50">
+                  <TableHead className="text-foreground font-bold">Vardas</TableHead>
+                  <TableHead className="text-foreground font-bold">El. paštas</TableHead>
+                  <TableHead className="text-foreground font-bold">Telefonas</TableHead>
+                  <TableHead className="text-foreground font-bold">Rolė</TableHead>
+                  <TableHead className="text-foreground font-bold text-right">Taškai</TableHead>
+                  <TableHead className="text-foreground font-bold">Registracija</TableHead>
+                  <TableHead className="text-foreground font-bold">Veiksmai</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50 border-black">
-                    <TableCell className="font-medium text-black">
+                  <TableRow key={user.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-foreground">
                       {user.name}
                     </TableCell>
-                    <TableCell className="text-black">
+                    <TableCell className="text-foreground">
                       {user.email}
                     </TableCell>
-                    <TableCell className="text-black">
+                    <TableCell className="text-foreground">
                       {user.phone || 'Nenurodyta'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'admin' ? 'default' : 'outline'} className={
                         user.role === 'admin' 
-                          ? 'bg-purple-100 text-purple-800 border-purple-300' 
-                          : 'bg-blue-100 text-blue-800 border-blue-300'
+                          ? 'bg-primary/10 text-primary border-primary/20' 
+                          : 'bg-muted text-muted-foreground border-border'
                       }>
                         {user.role === 'admin' ? 'Administratorius' : 'Naudotojas'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="point-badge">{user.totalPoints}</span>
+                      <span className="font-medium text-foreground">{user.totalPoints}</span>
                     </TableCell>
-                    <TableCell className="text-black">
+                    <TableCell className="text-foreground">
                       {format(new Date(user.createdAt || Date.now()), 'yyyy-MM-dd')}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button 
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="text-vcs-blue hover:text-white hover:bg-vcs-blue"
+                          className="text-primary hover:text-primary-foreground hover:bg-primary"
                           onClick={() => onAddBonus(user.id)}
                         >
-                          Pridėti Taškų
+                          <PlusCircle className="w-4 h-4 mr-1" />
+                          Pridėti
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                          onClick={() => onDeductPoints(user)}
+                        >
+                          <MinusCircle className="w-4 h-4 mr-1" />
+                          Atimti
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                          onClick={() => onViewHistory(user)}
+                        >
+                          <History className="w-4 h-4 mr-1" />
+                          Istorija
                         </Button>
                       </div>
                     </TableCell>

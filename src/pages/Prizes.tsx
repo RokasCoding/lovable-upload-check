@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,8 +46,8 @@ const Prizes: React.FC = () => {
     
     if (currentUser.totalPoints < prize.pointCost) {
       toast({
-        title: "Not enough points",
-        description: `You need ${prize.pointCost - currentUser.totalPoints} more points to redeem this prize.`,
+        title: "Nepakankamai taškų",
+        description: `Jums reikia dar ${prize.pointCost - currentUser.totalPoints} taškų, kad galėtumėte iškeisti šį prizą.`,
         variant: "destructive",
       });
       return;
@@ -73,8 +72,8 @@ const Prizes: React.FC = () => {
       });
       
       toast({
-        title: "Redemption requested",
-        description: "Your prize redemption request has been submitted for approval.",
+        title: "Užklausa pateikta",
+        description: "Jūsų prizo iškeitimo užklausa pateikta patvirtinimui.",
       });
       
       setIsDialogOpen(false);
@@ -84,8 +83,8 @@ const Prizes: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to redeem prize:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to process your redemption request. Please try again.",
+        title: "Klaida",
+        description: error.message || "Nepavyko apdoroti jūsų užklausos. Bandykite dar kartą.",
         variant: "destructive",
       });
     } finally {
@@ -98,29 +97,29 @@ const Prizes: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Available Prizes</h1>
-            <p className="text-gray-400 mt-1">Exchange your bonus points for these rewards</p>
+            <h1 className="text-3xl font-bold text-foreground">Galimi prizai</h1>
+            <p className="text-muted-foreground mt-1">Iškeiskite savo premijos taškus į šiuos prizus</p>
           </div>
-          <div className="bg-vcs-gray px-4 py-2 rounded-md">
-            <span className="text-sm text-gray-300">Your Points:</span>
-            <span className="ml-2 font-bold text-vcs-green">{currentUser?.totalPoints || 0}</span>
+          <div className="bg-muted px-4 py-2 rounded-md">
+            <span className="text-sm text-foreground">Jūsų taškai:</span>
+            <span className="ml-2 font-bold text-primary">{currentUser?.totalPoints || 0}</span>
           </div>
         </div>
         
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="bg-vcs-dark border-vcs-gray h-80">
+              <Card key={i} className="bg-background border-border h-80">
                 <CardHeader>
-                  <Skeleton className="h-32 w-full bg-vcs-gray" />
+                  <Skeleton className="h-32 w-full bg-muted" />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-6 w-3/4 mb-2 bg-vcs-gray" />
-                  <Skeleton className="h-4 w-full mb-1 bg-vcs-gray" />
-                  <Skeleton className="h-4 w-2/3 bg-vcs-gray" />
+                  <Skeleton className="h-6 w-3/4 mb-2 bg-muted" />
+                  <Skeleton className="h-4 w-full mb-1 bg-muted" />
+                  <Skeleton className="h-4 w-2/3 bg-muted" />
                 </CardContent>
                 <CardFooter>
-                  <Skeleton className="h-9 w-full bg-vcs-gray" />
+                  <Skeleton className="h-9 w-full bg-muted" />
                 </CardFooter>
               </Card>
             ))}
@@ -133,10 +132,10 @@ const Prizes: React.FC = () => {
               return (
                 <Card 
                   key={prize.id} 
-                  className={`bg-vcs-dark border-vcs-gray hover-scale ${!canAfford ? 'opacity-70' : ''}`}
+                  className={`bg-background border-border hover-scale ${!canAfford ? 'opacity-70' : ''}`}
                 >
                   <CardHeader>
-                    <div className="h-32 w-full overflow-hidden rounded-md mb-2 flex items-center justify-center bg-vcs-gray">
+                    <div className="h-32 w-full overflow-hidden rounded-md mb-2 flex items-center justify-center bg-muted">
                       {prize.imageUrl ? (
                         <img 
                           src={prize.imageUrl} 
@@ -144,27 +143,27 @@ const Prizes: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full w-full bg-vcs-gray text-gray-400">
-                          No Image
+                        <div className="flex items-center justify-center h-full w-full bg-muted text-muted-foreground">
+                          Nėra nuotraukos
                         </div>
                       )}
                     </div>
-                    <CardTitle className="text-white">{prize.name}</CardTitle>
-                    <CardDescription>{prize.description}</CardDescription>
+                    <CardTitle className="text-foreground">{prize.name}</CardTitle>
+                    <CardDescription className="text-muted-foreground">{prize.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-400">Point cost:</div>
-                      <div className="point-badge">{prize.pointCost} points</div>
+                      <div className="text-sm text-muted-foreground">Taškų kaina:</div>
+                      <div className="point-badge">{prize.pointCost} taškų</div>
                     </div>
                   </CardContent>
                   <CardFooter>
                     <Button 
-                      className={`w-full ${canAfford ? 'bg-vcs-green hover:bg-vcs-green/90' : 'bg-gray-600 cursor-not-allowed'}`}
+                      className={`w-full ${canAfford ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
                       onClick={() => canAfford && handlePrizeSelect(prize)}
                       disabled={!canAfford}
                     >
-                      {canAfford ? 'Redeem Prize' : 'Not Enough Points'}
+                      {canAfford ? 'Iškeisti prizą' : 'Nepakankamai taškų'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -174,18 +173,18 @@ const Prizes: React.FC = () => {
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-vcs-dark text-white border-vcs-gray">
+          <DialogContent className="bg-background text-foreground border-border">
             <DialogHeader>
-              <DialogTitle>Confirm Prize Redemption</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to redeem this prize? This request will need to be approved by an administrator.
+              <DialogTitle>Patvirtinti prizo iškeitimą</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Ar tikrai norite iškeisti šį prizą? Ši užklausa turės būti patvirtinta administratoriaus.
               </DialogDescription>
             </DialogHeader>
             
             {selectedPrize && (
               <div className="space-y-4 py-4">
                 <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-vcs-gray">
+                  <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
                     {selectedPrize.imageUrl && (
                       <img 
                         src={selectedPrize.imageUrl} 
@@ -195,20 +194,20 @@ const Prizes: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{selectedPrize.name}</h3>
-                    <p className="text-sm text-gray-400">{selectedPrize.description}</p>
+                    <h3 className="text-lg font-semibold text-foreground">{selectedPrize.name}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedPrize.description}</p>
                   </div>
                 </div>
                 
-                <div className="flex justify-between items-center pt-2 border-t border-gray-700">
-                  <span className="text-sm text-gray-400">Cost:</span>
-                  <span className="point-badge">{selectedPrize.pointCost} points</span>
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="text-sm text-muted-foreground">Kaina:</span>
+                  <span className="point-badge">{selectedPrize.pointCost} taškų</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Your balance after redemption:</span>
-                  <span className="font-medium text-vcs-green">
-                    {currentUser ? currentUser.totalPoints - selectedPrize.pointCost : 0} points
+                  <span className="text-sm text-muted-foreground">Jūsų likutis po iškeitimo:</span>
+                  <span className="font-medium text-primary">
+                    {currentUser ? currentUser.totalPoints - selectedPrize.pointCost : 0} taškų
                   </span>
                 </div>
               </div>
@@ -218,16 +217,16 @@ const Prizes: React.FC = () => {
               <Button
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="border-gray-600 text-white hover:bg-gray-700"
+                className="border-border text-foreground hover:bg-muted"
               >
-                Cancel
+                Atšaukti
               </Button>
               <Button 
                 onClick={handleRedeemPrize} 
-                className="bg-vcs-green hover:bg-vcs-green/90"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Processing...' : 'Confirm Redemption'}
+                {isSubmitting ? 'Apdorojama...' : 'Patvirtinti iškeitimą'}
               </Button>
             </DialogFooter>
           </DialogContent>

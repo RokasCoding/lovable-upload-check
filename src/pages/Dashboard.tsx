@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,77 +48,77 @@ const Dashboard: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           {/* Points summary card */}
-          <Card className="flex-1 bg-vcs-dark border-vcs-gray animate-fade-in">
+          <Card className="flex-1 bg-background border-border animate-fade-in">
             <CardHeader>
-              <CardTitle className="text-white">Your Bonus Points</CardTitle>
-              <CardDescription>Current balance and summary</CardDescription>
+              <CardTitle className="text-foreground">Jūsų premijos taškai</CardTitle>
+              <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center flex-col">
-                <div className="text-5xl font-bold text-vcs-green mb-2">
+                <div className="text-5xl font-bold text-primary mb-2">
                   {isLoading ? (
-                    <Skeleton className="h-12 w-24 bg-vcs-gray" />
+                    <Skeleton className="h-12 w-24 bg-muted" />
                   ) : (
                     currentUser?.totalPoints
                   )}
                 </div>
-                <div className="text-sm text-gray-400">Total Available Points</div>
+                <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
               </div>
             </CardContent>
-            <CardFooter className="border-t border-gray-700 flex justify-between">
-              <div className="text-sm text-gray-400">
+            <CardFooter className="border-t border-border flex justify-between">
+              <div className="text-sm text-muted-foreground">
                 <span className="font-medium">
                   {isLoading ? (
-                    <Skeleton className="h-5 w-16 inline-block bg-vcs-gray" />
+                    <Skeleton className="h-5 w-16 inline-block bg-muted" />
                   ) : (
                     bonusEntries.length
                   )}
                 </span>{" "}
-                courses completed
+                baigti kursai
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-muted-foreground">
                 <span className="font-medium">
                   {isLoading ? (
-                    <Skeleton className="h-5 w-16 inline-block bg-vcs-gray" />
+                    <Skeleton className="h-5 w-16 inline-block bg-muted" />
                   ) : (
                     totalPoints
                   )}
                 </span>{" "}
-                points earned
+                uždirbti taškai
               </div>
             </CardFooter>
           </Card>
 
           {/* Quick actions card */}
-          <Card className="flex-1 bg-vcs-dark border-vcs-gray animate-fade-in">
+          <Card className="flex-1 bg-background border-border animate-fade-in">
             <CardHeader>
-              <CardTitle className="text-white">Quick Actions</CardTitle>
-              <CardDescription>Things you can do</CardDescription>
+              <CardTitle className="text-foreground">Greiti veiksmai</CardTitle>
+              <CardDescription>Ką galite padaryti</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <div 
-                className="bg-vcs-gray p-4 rounded-md flex items-center hover:bg-vcs-green/20 cursor-pointer transition-colors"
+                className="bg-muted p-4 rounded-md flex items-center hover:bg-primary/10 cursor-pointer transition-colors"
                 onClick={() => navigate('/prizes')}
               >
-                <div className="mr-4 p-2 rounded-full bg-vcs-green/20">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-vcs-green"><path d="M12 2v20M2 12h20"></path></svg>
+                <div className="mr-4 p-2 rounded-full bg-primary/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12 2v20M2 12h20"></path></svg>
                 </div>
                 <div>
-                  <h3 className="font-medium text-white">Redeem Points</h3>
-                  <p className="text-sm text-gray-400">Exchange your points for rewards</p>
+                  <h3 className="font-medium text-foreground">Iškeisti taškus</h3>
+                  <p className="text-sm text-muted-foreground">Pakeiskite savo taškus į prizus</p>
                 </div>
               </div>
               
               <div 
-                className="bg-vcs-gray p-4 rounded-md flex items-center hover:bg-vcs-green/20 cursor-pointer transition-colors"
+                className="bg-muted p-4 rounded-md flex items-center hover:bg-primary/10 cursor-pointer transition-colors"
                 onClick={() => navigate('/history')}
               >
-                <div className="mr-4 p-2 rounded-full bg-vcs-green/20">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-vcs-green"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <div className="mr-4 p-2 rounded-full bg-primary/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 </div>
                 <div>
-                  <h3 className="font-medium text-white">View History</h3>
-                  <p className="text-sm text-gray-400">See your redemption history</p>
+                  <h3 className="font-medium text-foreground">Peržiūrėti istoriją</h3>
+                  <p className="text-sm text-muted-foreground">Žiūrėkite savo iškeitimų istoriją</p>
                 </div>
               </div>
             </CardContent>
@@ -127,43 +126,43 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Bonus entries table */}
-        <Card className="bg-vcs-dark border-vcs-gray animate-fade-in">
+        <Card className="bg-background border-border animate-fade-in">
           <CardHeader>
-            <CardTitle className="text-white">Bonus Points Transactions</CardTitle>
-            <CardDescription>Your course completions and earned points</CardDescription>
+            <CardTitle className="text-foreground">Premijos taškų operacijos</CardTitle>
+            <CardDescription>Jūsų baigti kursai ir uždirbti taškai</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full bg-vcs-gray" />
+                  <Skeleton key={i} className="h-12 w-full bg-muted" />
                 ))}
               </div>
             ) : bonusEntries.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                No bonus points entries yet.
+              <div className="text-center py-8 text-muted-foreground">
+                Kol kas nėra premijos taškų įrašų.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="hover:bg-vcs-gray/50 border-gray-700">
-                      <TableHead className="text-gray-300">Date</TableHead>
-                      <TableHead className="text-gray-300">Course</TableHead>
-                      <TableHead className="text-gray-300 text-right">Course Price</TableHead>
-                      <TableHead className="text-gray-300 text-right">Points Earned</TableHead>
+                    <TableRow className="hover:bg-muted/50 border-border">
+                      <TableHead className="text-foreground">Data</TableHead>
+                      <TableHead className="text-foreground">Kursas</TableHead>
+                      <TableHead className="text-foreground text-right">Kurso kaina</TableHead>
+                      <TableHead className="text-foreground text-right">Uždirbti taškai</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {bonusEntries.map((entry) => (
-                      <TableRow key={entry.id} className="hover:bg-vcs-gray/50 border-gray-700">
-                        <TableCell className="font-medium text-gray-300">
+                      <TableRow key={entry.id} className="hover:bg-muted/50 border-border">
+                        <TableCell className="font-medium text-foreground">
                           {format(new Date(entry.createdAt), 'dd MMM yyyy')}
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-foreground">
                           {entry.courseName}
                         </TableCell>
-                        <TableCell className="text-right text-gray-300">
+                        <TableCell className="text-right text-foreground">
                           €{entry.price}
                         </TableCell>
                         <TableCell className="text-right">

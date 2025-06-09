@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,11 +42,11 @@ const History: React.FC = () => {
   const getStatusBadge = (status: 'pending' | 'approved' | 'rejected') => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-500/20 text-yellow-300 border-yellow-500">Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-500/20 text-yellow-700 border-yellow-500">Laukiama</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-500/20 text-green-300 border-green-500">Approved</Badge>;
+        return <Badge variant="outline" className="bg-green-500/20 text-green-700 border-green-500">Patvirtinta</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-500/20 text-red-300 border-red-500">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-red-500/20 text-red-700 border-red-500">Atmesta</Badge>;
       default:
         return null;
     }
@@ -61,52 +60,52 @@ const History: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-white mb-6">Redemption History</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6">Iškeitimų istorija</h1>
         
-        <Card className="bg-vcs-dark border-vcs-gray animate-fade-in">
+        <Card className="bg-background border-border animate-fade-in">
           <CardHeader>
-            <CardTitle className="text-white">Your Prize Redemptions</CardTitle>
-            <CardDescription>View all your prize redemption requests and their status</CardDescription>
+            <CardTitle className="text-foreground">Jūsų prizų iškeitimai</CardTitle>
+            <CardDescription className="text-muted-foreground">Peržiūrėkite visus savo prizų iškeitimo užklausas ir jų būsenas</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-              <TabsList className="bg-vcs-gray">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="approved">Approved</TabsTrigger>
-                <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              <TabsList className="bg-muted">
+                <TabsTrigger value="all">Visi</TabsTrigger>
+                <TabsTrigger value="pending">Laukiami</TabsTrigger>
+                <TabsTrigger value="approved">Patvirtinti</TabsTrigger>
+                <TabsTrigger value="rejected">Atmesti</TabsTrigger>
               </TabsList>
             </Tabs>
             
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full bg-vcs-gray" />
+                  <Skeleton key={i} className="h-12 w-full bg-muted" />
                 ))}
               </div>
             ) : filteredRedemptions.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                No {activeTab === 'all' ? '' : activeTab} redemption requests found.
+              <div className="text-center py-8 text-muted-foreground">
+                {activeTab === 'all' ? 'Nėra' : activeTab === 'pending' ? 'Nėra laukiamų' : activeTab === 'approved' ? 'Nėra patvirtintų' : 'Nėra atmestų'} iškeitimo užklausų.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="hover:bg-vcs-gray/50 border-gray-700">
-                      <TableHead className="text-gray-300">Date</TableHead>
-                      <TableHead className="text-gray-300">Prize</TableHead>
-                      <TableHead className="text-gray-300 text-right">Points</TableHead>
-                      <TableHead className="text-gray-300 text-center">Status</TableHead>
-                      <TableHead className="text-gray-300">Comments</TableHead>
+                    <TableRow className="hover:bg-muted/50 border-border">
+                      <TableHead className="text-foreground">Data</TableHead>
+                      <TableHead className="text-foreground">Prizas</TableHead>
+                      <TableHead className="text-foreground text-right">Taškai</TableHead>
+                      <TableHead className="text-foreground text-center">Būsena</TableHead>
+                      <TableHead className="text-foreground">Komentarai</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRedemptions.map((redemption) => (
-                      <TableRow key={redemption.id} className="hover:bg-vcs-gray/50 border-gray-700">
-                        <TableCell className="font-medium text-gray-300">
+                      <TableRow key={redemption.id} className="hover:bg-muted/50 border-border">
+                        <TableCell className="font-medium text-foreground">
                           {format(new Date(redemption.requestedAt), 'dd MMM yyyy')}
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-foreground">
                           {redemption.prizeName}
                         </TableCell>
                         <TableCell className="text-right">
@@ -115,8 +114,8 @@ const History: React.FC = () => {
                         <TableCell className="text-center">
                           {getStatusBadge(redemption.status)}
                         </TableCell>
-                        <TableCell className="text-gray-300">
-                          {redemption.comment || (redemption.status === 'pending' ? 'Awaiting review' : '')}
+                        <TableCell className="text-foreground">
+                          {redemption.comment || (redemption.status === 'pending' ? 'Laukiama peržiūros' : '')}
                         </TableCell>
                       </TableRow>
                     ))}
