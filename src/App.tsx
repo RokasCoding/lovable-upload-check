@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +13,7 @@ import Admin from "./pages/Admin";
 import Rules from "./pages/Rules";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
+import ResetPassword from '@/pages/ResetPassword';
 
 const queryClient = new QueryClient();
 
@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/rules" element={<Rules />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

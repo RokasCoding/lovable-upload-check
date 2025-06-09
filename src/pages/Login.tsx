@@ -8,34 +8,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { signInWithEmail, signUpWithEmail, supabase } from '@/lib/supabase';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, register, forgotPassword, setDemoUser } = useAuth();
   const { toast } = useToast();
-  
   const [activeTab, setActiveTab] = useState('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  
   // Register form state
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
     try {
-      const success = await login(loginEmail, loginPassword);
-      if (success) {
+      const { data, error } = await signInWithEmail(loginEmail, loginPassword);
+      if (error) {
+        toast({
+          title: 'Klaida',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else if (data?.user) {
         navigate('/dashboard');
       }
     } finally {
@@ -46,17 +47,21 @@ const Login: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
     try {
-      const success = await register(registerEmail, registerName, registerPassword);
-      if (success) {
+      const { data, error } = await signUpWithEmail(registerEmail, registerPassword, { name: registerName });
+      if (error) {
+        toast({
+          title: 'Klaida',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else if (data?.user) {
         setActiveTab('login');
         setLoginEmail(registerEmail);
         setLoginPassword(registerPassword);
-        
         toast({
-          title: "Registracija sėkminga",
-          description: "Prašome prisijungti su nauja paskyra.",
+          title: 'Registracija sėkminga',
+          description: 'Prašome prisijungti su nauja paskyra.',
         });
       }
     } finally {
@@ -67,32 +72,23 @@ const Login: React.FC = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
-      await forgotPassword(forgotEmail);
-      setForgotEmail('');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const loginAsDemo = async (type: 'admin' | 'user') => {
-    setIsSubmitting(true);
-    try {
-      setDemoUser(type);
-      navigate('/dashboard');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Function to automatically log in as test user
-  const loginAsTestUser = async (email: string) => {
-    setIsSubmitting(true);
-    try {
-      const success = await login(email, 'password123');
-      if (success) {
-        navigate('/dashboard');
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      if (error) {
+        toast({
+          title: 'Klaida',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Slaptažodžio atstatymas',
+          description: 'Patikrinkite savo el. paštą ir sekite nuorodą slaptažodžio atstatymui.',
+        });
+        setForgotEmail('');
       }
     } finally {
       setIsSubmitting(false);
@@ -245,113 +241,6 @@ const Login: React.FC = () => {
               </CardContent>
             </TabsContent>
           </Tabs>
-          
-          <div className="px-6 pb-6 pt-2">
-            <Separator className="my-4 bg-gray-300" />
-            
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600 text-center">Don't want to create an account?</div>
-              <div className="grid grid-cols-2 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="border-2 border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white"
-                  onClick={() => loginAsDemo('user')}
-                  disabled={isSubmitting}
-                >
-                  Demo User
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-2 border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white"
-                  onClick={() => loginAsDemo('admin')}
-                  disabled={isSubmitting}
-                >
-                  Demo Admin
-                </Button>
-              </div>
-            </div>
-            
-            <Separator className="my-4 bg-gray-300" />
-            
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600 text-center">Test Users</div>
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-500 uppercase">Admin Users:</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="border border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('admin1@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    Main Admin
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('admin2@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    Secondary Admin
-                  </Button>
-                </div>
-                
-                <div className="text-xs font-medium text-gray-500 uppercase mt-3">Regular Users:</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('highpoints@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    High Points (1200)
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('mediumpoints@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    Medium Points (500)
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('lowpoints@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    Low Points (100)
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('activeuser@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    Active User (850)
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="border border-vcs-blue text-vcs-blue hover:bg-vcs-blue hover:text-white text-xs"
-                    onClick={() => loginAsTestUser('newuser@example.com')}
-                    disabled={isSubmitting}
-                  >
-                    New User (0)
-                  </Button>
-                </div>
-              </div>
-              <div className="text-xs text-center text-gray-500 mt-2">
-                All test accounts use password: "password123"
-              </div>
-            </div>
-          </div>
         </Card>
       </div>
     </div>
