@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { AuthService } from '@/lib/auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { user, loading } = useAuth();
@@ -24,6 +26,7 @@ const Login: React.FC = () => {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [forgotEmail, setForgotEmail] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -35,31 +38,39 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
+    const { data, error } = await AuthService.signIn(loginEmail, loginPassword);
+    
     if (error) {
-      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
+      toast({ title: 'Klaida', description: error, variant: 'destructive' });
     }
-    // No need to navigate, the useEffect will handle it on auth state change
     setIsSubmitting(false);
+  };
+
+  const validatePassword = (password: string) => {
+    if (!AuthService.validatePassword(password)) {
+      setPasswordError('Slaptažodis turi būti bent 8 simbolių ilgio, turėti bent vieną didžiąją ir mažąją raidę, skaičių ir specialų simbolį');
+      return false;
+    }
+    setPasswordError('');
+    return true;
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePassword(registerPassword)) {
+      return;
+    }
+    
     setIsSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: registerEmail,
-      password: registerPassword,
-      options: {
-        data: { name: registerName },
-      },
-    });
+    const { data, error } = await AuthService.signUp(registerEmail, registerPassword, { name: registerName });
+    
     if (error) {
-      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
+      toast({ title: 'Klaida', description: error, variant: 'destructive' });
     } else {
-      toast({ title: 'Registracija sėkminga', description: 'Patikrinkite savo el. paštą, kad patvirtintumėte paskyrą.' });
+      toast({ 
+        title: 'Registracija sėkminga', 
+        description: 'Patikrinkite savo el. paštą, kad patvirtintumėte paskyrą.' 
+      });
       setActiveTab('login');
     }
     setIsSubmitting(false);
@@ -68,20 +79,21 @@ const Login: React.FC = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    const { error } = await AuthService.resetPassword(forgotEmail);
+    
     if (error) {
-      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
+      toast({ title: 'Klaida', description: error, variant: 'destructive' });
     } else {
-      toast({ title: 'Slaptažodžio atstatymas', description: 'Patikrinkite savo el. paštą ir sekite instrukcijas.' });
+      toast({ 
+        title: 'Slaptažodžio atstatymas', 
+        description: 'Patikrinkite savo el. paštą ir sekite instrukcijas.' 
+      });
     }
     setIsSubmitting(false);
   };
 
-  // While loading, we can show a blank page or a spinner
   if (loading) {
-    return null; 
+    return null;
   }
 
   return (
@@ -95,7 +107,9 @@ const Login: React.FC = () => {
         <Card className="bg-background border-border shadow-lg">
           <CardHeader>
             <CardTitle className="text-foreground">Sveiki atvykę</CardTitle>
-            <CardDescription className="text-muted-foreground">Prisijunkite prie savo paskyros arba sukurkite naują</CardDescription>
+            <CardDescription className="text-muted-foreground">
+              Prisijunkite prie savo paskyros arba sukurkite naują
+            </CardDescription>
           </CardHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -170,13 +184,22 @@ const Login: React.FC = () => {
                       type="password"
                       placeholder="••••••••"
                       value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      onChange={(e) => {
+                        setRegisterPassword(e.target.value);
+                        validatePassword(e.target.value);
+                      }}
                       required
                     />
+                    {passwordError && (
+                      <Alert variant="destructive" className="mt-2">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full" disabled={isSubmitting || !!passwordError}>
                     {isSubmitting ? 'Registruojama...' : 'Registruotis'}
                   </Button>
                 </CardFooter>

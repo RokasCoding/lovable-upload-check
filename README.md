@@ -56,7 +56,51 @@ Norint, kad aplikacija veiktų, būtina teisingai sukonfigūruoti Supabase proje
 
 ### 1. Duomenų Bazės Lentelės ir RLS
 
--   **Paleiskite SQL skriptus:** Supabase projekto **SQL Editor** skiltyje paleiskite pateiktus SQL skriptus, kad sukurtumėte reikiamas lenteles (`profiles`, `bonus_entries`, `prizes`, `redemptions`) ir nustatytumėte Row Level Security (RLS) politiką.
+-   **Paleiskite SQL skriptus:** Supabase projekto **SQL Editor** skiltyje paleiskite pateiktus SQL skriptus, kad sukurtumėte reikiamas lenteles:
+    - `profiles`: Vartotojų profiliai
+    - `bonus_entries`: Taškų įrašai
+    - `prizes`: Prizai
+    - `redemptions`: Prizų išpirkimai
+    - `content`: Statinis turinys (D.U.K., Taisyklės)
+
+```sql
+-- Turinio lentelės sukūrimas
+CREATE TABLE public.content (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  page TEXT UNIQUE NOT NULL,
+  content TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Įjungti Row Level Security
+ALTER TABLE public.content ENABLE ROW LEVEL SECURITY;
+
+-- Politika: Leisti visiems skaityti turinį
+CREATE POLICY "Public can read content"
+ON public.content FOR SELECT
+USING (true);
+
+-- Politika: Leisti tik administratoriams redaguoti turinį
+CREATE POLICY "Admins can manage content"
+ON public.content FOR ALL
+USING ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
+WITH CHECK ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
+
+-- Automatinis updated_at atnaujinimas
+CREATE OR REPLACE FUNCTION handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = timezone('utc'::text, now());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_content_update
+  BEFORE UPDATE ON public.content
+  FOR EACH ROW
+  EXECUTE PROCEDURE handle_updated_at();
+```
 
 ### 2. Autentifikacija
 
