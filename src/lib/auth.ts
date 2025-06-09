@@ -7,24 +7,7 @@ const LOCKOUT_DURATION = 15; // minutes
 export const AuthService = {
   async signIn(email: string, password: string) {
     try {
-      // Check rate limit first
-      const { data: rateLimit, error: rateLimitError } = await supabase
-        .rpc('check_rate_limit', {
-          client_ip: 'login', // The actual IP will be handled by Supabase
-          endpoint_name: 'auth_login',
-          max_attempts: MAX_LOGIN_ATTEMPTS,
-          window_minutes: LOCKOUT_DURATION
-        });
-
-      if (rateLimitError) {
-        throw new Error('Rate limit check failed');
-      }
-
-      if (!rateLimit) {
-        throw new Error(`Too many login attempts. Please try again after ${LOCKOUT_DURATION} minutes.`);
-      }
-
-      // Proceed with login
+      // Proceed with login directly
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -44,24 +27,6 @@ export const AuthService = {
 
   async signUp(email: string, password: string, metadata: { name: string }) {
     try {
-      // Check rate limit
-      const { data: rateLimit, error: rateLimitError } = await supabase
-        .rpc('check_rate_limit', {
-          client_ip: 'signup',
-          endpoint_name: 'auth_signup',
-          max_attempts: 3, // Stricter limit for signups
-          window_minutes: 60 // Longer window for signups
-        });
-
-      if (rateLimitError) {
-        throw new Error('Rate limit check failed');
-      }
-
-      if (!rateLimit) {
-        throw new Error('Too many signup attempts. Please try again later.');
-      }
-
-      // Validate password strength
       if (!this.validatePassword(password)) {
         throw new Error('Password does not meet security requirements');
       }
@@ -107,23 +72,6 @@ export const AuthService = {
 
   async resetPassword(email: string) {
     try {
-      // Check rate limit
-      const { data: rateLimit, error: rateLimitError } = await supabase
-        .rpc('check_rate_limit', {
-          client_ip: 'reset',
-          endpoint_name: 'auth_reset',
-          max_attempts: 3,
-          window_minutes: 60
-        });
-
-      if (rateLimitError) {
-        throw new Error('Rate limit check failed');
-      }
-
-      if (!rateLimit) {
-        throw new Error('Too many reset attempts. Please try again later.');
-      }
-
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
