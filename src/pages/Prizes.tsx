@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
-import { getPrizes, requestRedemption } from '@/services/dataService';
+import { getPrizes, createRedemption } from '@/services/dataService';
 import { Prize } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,31 +50,29 @@ const Prizes: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleRedeemPrize = async () => {
+  const handleRedemption = async () => {
     if (!user || !selectedPrize) return;
     
     setIsSubmitting(true);
-    
     try {
-      await requestRedemption({
+      await createRedemption({
         userId: user.id,
-        userName: user.user_metadata.name || user.email,
+        userName: user.user_metadata.name,
         prizeId: selectedPrize.id,
         prizeName: selectedPrize.name,
         pointCost: selectedPrize.pointCost,
       });
       
       toast({
-        title: "Užklausa pateikta",
-        description: "Jūsų prizo iškeitimo užklausa sėkmingai pateikta administratoriui.",
+        title: "Prašymas išsiųstas",
+        description: "Jūsų prizo iškeitimo prašymas sėkmingai užregistruotas. Administratorius jį peržiūrės artimiausiu metu.",
       });
       
       setIsDialogOpen(false);
     } catch (error: any) {
-      console.error('Failed to redeem prize:', error);
       toast({
         title: "Klaida",
-        description: error.message || "Nepavyko apdoroti jūsų užklausos. Bandykite dar kartą.",
+        description: error.message || "Nepavyko išsiųsti prizo iškeitimo prašymo",
         variant: "destructive",
       });
     } finally {
@@ -212,7 +210,7 @@ const Prizes: React.FC = () => {
                 Atšaukti
               </Button>
               <Button 
-                onClick={handleRedeemPrize} 
+                onClick={handleRedemption} 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isSubmitting}
               >
