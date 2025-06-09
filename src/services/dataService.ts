@@ -1,0 +1,232 @@
+
+import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
+import { mockUsers, mockBonusEntries, mockPrizes, mockRedemptions, mockStats } from '@/data/mockData';
+
+// Helper function to simulate API call delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// In-memory storage for dynamic data
+let users = [...mockUsers];
+let bonusEntries = [...mockBonusEntries];
+let prizes = [...mockPrizes];
+let redemptions = [...mockRedemptions];
+
+// User related functions
+export const getUsers = async (): Promise<User[]> => {
+  await delay(300);
+  return users.filter(user => !user.id.startsWith('demo-'));
+};
+
+export const getUserById = async (id: string): Promise<User | null> => {
+  await delay(200);
+  
+  // Handle demo users
+  if (id.startsWith('demo-')) {
+    return null;
+  }
+  
+  return users.find(user => user.id === id) || null;
+};
+
+export const inviteUser = async (email: string, name: string, role: 'admin' | 'user'): Promise<boolean> => {
+  await delay(500);
+  
+  // Check if user already exists
+  if (users.some(user => user.email === email)) {
+    throw new Error('User with this email already exists');
+  }
+  
+  const newUser: User = {
+    id: `user-${Date.now()}`,
+    name,
+    email,
+    role,
+    totalPoints: 0,
+    isVerified: true,
+  };
+  
+  users.push(newUser);
+  return true;
+};
+
+// Bonus entries related functions
+export const getBonusEntries = async (userId?: string): Promise<BonusEntry[]> => {
+  await delay(300);
+  
+  // For demo users, return empty array
+  if (userId?.startsWith('demo-')) {
+    return [];
+  }
+  
+  if (userId) {
+    return bonusEntries.filter(entry => entry.userId === userId);
+  }
+  
+  return bonusEntries;
+};
+
+export const createBonusEntry = async (entry: Omit<BonusEntry, 'id' | 'createdAt'>): Promise<BonusEntry> => {
+  await delay(400);
+  
+  const newEntry: BonusEntry = {
+    ...entry,
+    id: `entry-${Date.now()}`,
+    createdAt: new Date(),
+  };
+  
+  bonusEntries.push(newEntry);
+  
+  // Update user's total points
+  const userIndex = users.findIndex(user => user.id === entry.userId);
+  if (userIndex !== -1) {
+    users[userIndex].totalPoints += entry.pointsAwarded;
+  }
+  
+  return newEntry;
+};
+
+// Prize related functions
+export const getPrizes = async (): Promise<Prize[]> => {
+  await delay(250);
+  return prizes.filter(prize => prize.active);
+};
+
+export const getAllPrizes = async (): Promise<Prize[]> => {
+  await delay(250);
+  return prizes;
+};
+
+export const createPrize = async (prize: Omit<Prize, 'id'>): Promise<Prize> => {
+  await delay(400);
+  
+  const newPrize: Prize = {
+    ...prize,
+    id: `prize-${Date.now()}`,
+  };
+  
+  prizes.push(newPrize);
+  return newPrize;
+};
+
+export const updatePrize = async (prize: Prize): Promise<Prize> => {
+  await delay(400);
+  
+  const index = prizes.findIndex(p => p.id === prize.id);
+  if (index === -1) {
+    throw new Error('Prize not found');
+  }
+  
+  prizes[index] = prize;
+  return prize;
+};
+
+// Redemption related functions
+export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]> => {
+  await delay(300);
+  
+  // For demo users, return empty array
+  if (userId?.startsWith('demo-')) {
+    return [];
+  }
+  
+  if (userId) {
+    return redemptions.filter(redemption => redemption.userId === userId);
+  }
+  
+  return redemptions;
+};
+
+export const requestRedemption = async (redemption: Omit<PrizeRedemption, 'id' | 'status' | 'requestedAt' | 'updatedAt'>): Promise<PrizeRedemption> => {
+  await delay(400);
+  
+  // Check if user has enough points
+  const user = users.find(user => user.id === redemption.userId);
+  if (!user || user.totalPoints < redemption.pointCost) {
+    throw new Error('Not enough points to redeem this prize');
+  }
+  
+  const newRedemption: PrizeRedemption = {
+    ...redemption,
+    id: `redemption-${Date.now()}`,
+    status: 'pending',
+    requestedAt: new Date(),
+  };
+  
+  redemptions.push(newRedemption);
+  return newRedemption;
+};
+
+export const processRedemption = async (
+  id: string, 
+  status: 'approved' | 'rejected', 
+  comment?: string
+): Promise<PrizeRedemption> => {
+  await delay(400);
+  
+  const index = redemptions.findIndex(r => r.id === id);
+  if (index === -1) {
+    throw new Error('Redemption not found');
+  }
+  
+  redemptions[index] = {
+    ...redemptions[index],
+    status,
+    comment,
+    updatedAt: new Date(),
+  };
+  
+  // If approved, deduct points from user
+  if (status === 'approved') {
+    const userIndex = users.findIndex(user => user.id === redemptions[index].userId);
+    if (userIndex !== -1) {
+      users[userIndex].totalPoints -= redemptions[index].pointCost;
+    }
+  }
+  
+  return redemptions[index];
+};
+
+// Stats related functions
+export const getStats = async (): Promise<Stats> => {
+  await delay(300);
+  
+  const totalUsers = users.filter(user => user.role === 'user' && !user.id.startsWith('demo-')).length;
+  const totalPointsAwarded = bonusEntries.reduce((sum, entry) => sum + entry.pointsAwarded, 0);
+  const totalPointsRedeemed = redemptions
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => sum + r.pointCost, 0);
+  
+  const topUsers = users
+    .filter(user => user.role === 'user' && !user.id.startsWith('demo-'))
+    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .slice(0, 5)
+    .map(user => ({
+      userId: user.id,
+      name: user.name,
+      points: user.totalPoints,
+    }));
+  
+  // Calculate popular prizes
+  const prizeOccurrences: Record<string, { count: number; name: string }> = {};
+  redemptions
+    .filter(r => r.status === 'approved')
+    .forEach(r => {
+      if (!prizeOccurrences[r.prizeId]) {
+        prizeOccurrences[r.prizeId] = { count: 0, name: r.prizeName };
+      }
+      prizeOccurrences[r.prizeId].count++;
+    });
+  
+  const popularPrizes = Object.entries(prizeOccurrences)
+    .map(([prizeId, { count, name }]) => ({ prizeId, name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  
+  return {
+    totalUsers,
+    totalPointsAwarded,
+    totalPointsRedeemed,
+    topUsers,
+    popularPrizes,
+  };
+};
