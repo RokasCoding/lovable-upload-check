@@ -4,81 +4,71 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Save, X } from 'lucide-react';
+import { Edit, Save, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const FAQ = () => {
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = user?.user_metadata?.role === 'admin';
   const { toast } = useToast();
   const [content, setContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
 
-  // Default FAQ content
-  const defaultContent = `# Dažnai užduodami klausimai (D.U.K.)
-
-## Q: Kaip užsidirbti taškų?
-A: Taškai skiriami už:
-- Aktyvų dalyvavimą pamokose
-- Projektų atlikimą laiku
-- Papildomų užduočių sprendimą
-- Pagalbą kitiems studentams
-- Dalyvavimą renginuose
-
-## Q: Kiek taškų reikia prizui?
-A: Prizų taškų kainos skiriasi:
-- Maži prizai: 50-100 taškų
-- Vidutiniai prizai: 100-300 taškų
-- Dideli prizai: 300+ taškų
-
-## Q: Ar taškai "senėja"?
-A: Ne, taškai galioja visą programos trukmę ir nesenėja.
-
-## Q: Ar galiu perduoti taškus kitam studentui?
-A: Ne, taškų perduoti negalima. Kiekvienas studentas kaupia taškus individualiai.
-
-## Q: Kaip užsisakyti prizą?
-A: Prizą galite užsisakyti per sistemą:
-1. Eikite į "Prizai" skyrių
-2. Pasirinkite norimą prizą
-3. Spauskite "Užsisakyti"
-4. Sulauksite patvirtinimo
-
-## Q: Kiek laiko užtrunka prizo išdavimas?
-A: Paprastai prizai išduodami per 1-2 darbo dienas po užsakymo patvirtinimo.
-
-## Q: Ką daryti, jei taškų skaičius neteisingas?
-A: Kreipkitės į dėstytoją arba administratorių. Jie patikrina ir ištaiso klaidą.
-
-## Q: Ar galiu matyti savo taškų istoriją?
-A: Taip, eikite į "Istorija" skyrių, kur matysite visą taškų gavimo istoriją.
-
-## Q: Kas nutiks su taškais po programos pabaigos?
-A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudoti laiku.`;
-
   useEffect(() => {
-    // Load content from localStorage or use default
-    const savedContent = localStorage.getItem('faq-content');
-    if (savedContent) {
-      setContent(savedContent);
-    } else {
-      setContent(defaultContent);
-    }
-  }, []);
+    const fetchContent = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('content')
+        .select('content')
+        .eq('page', 'faq')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Ignore 'exact one row not found'
+        console.error('Error fetching FAQ content:', error);
+        toast({
+          title: "Klaida",
+          description: "Nepavyko gauti D.U.K. turinio.",
+          variant: "destructive",
+        });
+      } else if (data) {
+        setContent(data.content || 'Turinys nerastas.');
+      } else {
+        setContent('Turinys nerastas. Administratorius turi jį pridėti.');
+      }
+      setIsLoading(false);
+    };
+
+    fetchContent();
+  }, [toast]);
 
   const handleEdit = () => {
     setEditContent(content);
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    setContent(editContent);
-    localStorage.setItem('faq-content', editContent);
-    setIsEditing(false);
-    toast({
-      title: "Išsaugota",
-      description: "D.U.K. sėkmingai atnaujintas.",
-    });
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from('content')
+      .update({ content: editContent })
+      .eq('page', 'faq');
+
+    if (error) {
+      toast({
+        title: "Klaida",
+        description: "Nepavyko atnaujinti D.U.K. " + error.message,
+        variant: "destructive",
+      });
+    } else {
+      setContent(editContent);
+      setIsEditing(false);
+      toast({
+        title: "Išsaugota",
+        description: "D.U.K. sėkmingai atnaujintas.",
+      });
+    }
   };
 
   const handleCancel = () => {
@@ -132,7 +122,11 @@ A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudot
             )}
           </CardHeader>
           <CardContent>
-            {isEditing ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center min-h-[600px]">
+                <Loader2 className="animate-spin h-10 w-10 text-primary" />
+              </div>
+            ) : isEditing ? (
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
@@ -140,7 +134,7 @@ A: Po programos pabaigos taškai nebeveiks, todėl rekomenduojame juos išnaudot
                 placeholder="Įveskite D.U.K. turinį..."
               />
             ) : (
-              <div className="prose prose-lg max-w-none">
+              <div className="prose prose-lg max-w-none dark:prose-invert">
                 {formatContent(content)}
               </div>
             )}
