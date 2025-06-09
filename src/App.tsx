@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+// @ts-ignore
+window.supabase = supabase;
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
