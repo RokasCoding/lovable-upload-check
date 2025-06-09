@@ -75,7 +75,7 @@ const Login: React.FC = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${import.meta.env.VITE_APP_URL}/reset-password`
       });
       if (error) {
         toast({
