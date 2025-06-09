@@ -42,44 +42,52 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
       throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
     }
 
-    // Generate a unique invite link
-    const inviteId = Math.random().toString(36).substring(2, 15);
-    const inviteLink = `${window.location.origin}/register?invite=${inviteId}`;
+    // Generate a temporary password
+    const tempPassword = Math.random().toString(36).slice(-12);
 
-    // Create a temporary invite record in Supabase
-    const { error: inviteError } = await supabase
-      .from('invites')
-      .insert([
-        {
-          email,
+    // Create user account with Supabase Auth
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: tempPassword,
+      options: {
+        data: {
           name,
           role,
-          invite_id: inviteId,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
-        }
-      ]);
+          isInvited: true
+        },
+        emailRedirectTo: `${window.location.origin}/reset-password`
+      }
+    });
 
-    if (inviteError) {
-      throw inviteError;
+    if (signUpError) {
+      throw signUpError;
     }
 
-    // Send invite email
-    const { success, error: emailError } = await sendInviteEmail(email, name, inviteLink);
-    
-    if (!success) {
-      // If email fails, delete the invite record
-      await supabase
-        .from('invites')
-        .delete()
-        .eq('invite_id', inviteId);
-      
-      throw emailError || new Error('Nepavyko išsiųsti el. laiško');
+    // Create a profile record
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: data.user.id,
+            email,
+            name,
+            role,
+            total_points: 0
+          }
+        ]);
+
+      if (profileError) {
+        // If profile creation fails, delete the auth user
+        await supabase.auth.admin.deleteUser(data.user.id);
+        throw profileError;
+      }
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to invite user:', error);
-    throw error;
+    throw new Error(error.message || 'Nepavyko išsiųsti pakvietimo');
   }
 };
 

@@ -147,11 +147,11 @@ const Admin: React.FC = () => {
         setInviteEmail('');
         setInviteRole('user');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Nepavyko pakviesti naudotojo:', error);
       toast({
         title: "Klaida",
-        description: "Nepavyko išsiųsti pakvietimo",
+        description: error.message || "Nepavyko išsiųsti pakvietimo",
         variant: "destructive",
       });
     } finally {
