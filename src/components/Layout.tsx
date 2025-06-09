@@ -32,7 +32,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               alt="Vilnius Coding School Logo" 
               className="h-12 object-contain"
             />
-            <span className="hidden sm:inline-block text-xl font-semibold text-vcs-black ml-2">Bonus CRM</span>
+            <span className="hidden sm:inline-block text-xl font-semibold text-vcs-black ml-2">VCS Bonus Sistema</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">

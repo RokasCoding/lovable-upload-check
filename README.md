@@ -1,73 +1,109 @@
-# Welcome to your Lovable project
+# Premijos Taškų Sistema
 
-## Project info
+Tai premijos taškų (lojalumo) sistema, skirta Vilniaus Coding School. Sistema leidžia administratoriui pridėti taškus vartotojams už baigtus kursus, o vartotojai gali iškeisti sukauptus taškus į prizus.
 
-**URL**: https://lovable.dev/projects/46896a49-a61b-4285-8bed-a26931c17890
+## Naudojamos Technologijos
 
-## How can I edit this code?
+Projektas sukurtas naudojant šias technologijas:
 
-There are several ways of editing your application.
+-   **Vite**: Greitam developinimui ir buildinimui.
+-   **React**: Vartotojo sąsajos kūrimui.
+-   **TypeScript**: Tipo saugumui.
+-   **Tailwind CSS**: Moderniam ir greitam dizainui.
+-   **shadcn/ui**: Paruošti, pritaikomi vartotojo sąsajos komponentai.
+-   **Supabase**: Duomenų bazei, autentifikacijai ir saugyklai.
+-   **Resend**: El. laiškų siuntimui (pvz., registracijos patvirtinimai, slaptažodžio atstatymas).
 
-**Use Lovable**
+## Projekto Paleidimas Lokaliai
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/46896a49-a61b-4285-8bed-a26931c17890) and start prompting.
+Norint paleisti projektą savo kompiuteryje, atlikite šiuos veiksmus:
 
-Changes made via Lovable will be committed automatically to this repo.
+1.  **Klonuokite repozitoriją:**
+    ```sh
+    git clone <JŪSŲ_GIT_URL>
+    cd <PROJEKTO_PAVADINIMAS>
+    ```
 
-**Use your preferred IDE**
+2.  **Įdiekite priklausomybes:**
+    ```sh
+    npm install
+    ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3.  **Sukonfigūruokite aplinkos kintamuosius:**
+    -   Sukurkite `.env` failą projekto šakninėje direktorijoje, nukopijuodami `.env.example` turinį.
+    -   Užpildykite `.env` failą savo Supabase ir Resend raktais:
+        ```env
+        # Supabase Konfigūracija
+        VITE_SUPABASE_URL=JŪSŲ_SUPABASE_PROJEKTO_URL
+        VITE_SUPABASE_ANON_KEY=JŪSŲ_SUPABASE_ANON_RAKTAS
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+        # Resend Konfigūracija
+        VITE_RESEND_API_KEY=JŪSŲ_RESEND_API_RAKTAS
 
-Follow these steps:
+        # Aplikacijos URL
+        VITE_APP_URL=http://localhost:5173
+        ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+4.  **Paleiskite developinimo serverį:**
+    ```sh
+    npm run dev
+    ```
+    Aplikacija bus pasiekiama adresu `http://localhost:5173`.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Supabase Konfigūracija
 
-# Step 3: Install the necessary dependencies.
-npm i
+Norint, kad aplikacija veiktų, būtina teisingai sukonfigūruoti Supabase projektą.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 1. Duomenų Bazės Lentelės ir RLS
 
-**Edit a file directly in GitHub**
+-   **Paleiskite SQL skriptus:** Supabase projekto **SQL Editor** skiltyje paleiskite pateiktus SQL skriptus, kad sukurtumėte reikiamas lenteles (`profiles`, `bonus_entries`, `prizes`, `redemptions`) ir nustatytumėte Row Level Security (RLS) politiką.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 2. Autentifikacija
 
-**Use GitHub Codespaces**
+-   **Įjunkite Email Provider:** Nueikite į **Authentication -> Providers** ir įjunkite **Email**.
+-   **Konfigūruokite Redirect URLs:** Nueikite į **Authentication -> URL Configuration** ir laukelyje **Redirect URLs** pridėkite savo aplikacijos URL, pvz.:
+    -   `http://localhost:5173/reset-password` (lokaliam testavimui)
+    -   `https://jūsų-produkcijos-domenas.com/reset-password` (produkcijai)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Vartotojų Valdymas
 
-## What technologies are used for this project?
+### Administratoriaus Sukūrimas
 
-This project is built with:
+Norėdami sukurti administratorių, atlikite šiuos veiksmus:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1.  Užregistruokite naują vartotoją per aplikacijos registracijos formą.
+2.  Supabase projekto **SQL Editor** skiltyje įvykdykite SQL funkciją, nurodydami naujo vartotojo ID (jį galite gauti iš **Authentication -> Users** skilties):
+    ```sql
+    -- Pirmiausia, vieną kartą sukurkite šią funkciją:
+    CREATE OR REPLACE FUNCTION add_admin_role(user_id_to_update UUID)
+    RETURNS TEXT
+    LANGUAGE plpgsql
+    SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+      UPDATE auth.users
+      SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'
+      WHERE id = user_id_to_update;
+      RETURN 'Role updated for ' || user_id_to_update;
+    END;
+    $$;
 
-## How can I deploy this project?
+    -- Tada naudokite funkciją, kad priskirtumėte rolę:
+    SELECT add_admin_role('VARTOTOJO_ID_ČIA');
+    ```
 
-Simply open [Lovable](https://lovable.dev/projects/46896a49-a61b-4285-8bed-a26931c17890) and click on Share -> Publish.
+## Diegimas (Deployment)
 
-## Can I connect a custom domain to my Lovable project?
+Projektas yra paruoštas diegimui į **Vercel**.
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1.  **Prijunkite savo Git repozitoriją** prie Vercel.
+2.  **Sukonfigūruokite aplinkos kintamuosius** Vercel projekto nustatymuose (Settings -> Environment Variables). Būtina pridėti visus kintamuosius iš `.env` failo.
+3.  **Pridėkite peradresavimo taisyklę:** Sukurkite `vercel.json` failą projekto šakninėje direktorijoje su šiuo turiniu, kad veiktų klientinės pusės maršrutizavimas (routing):
+    ```json
+    {
+      "rewrites": [
+        { "source": "/(.*)", "destination": "/" }
+      ]
+    }
+    ```
+4.  Po `git push` į pagrindinę šaką, Vercel automatiškai įdiegs naujausią versiją.
