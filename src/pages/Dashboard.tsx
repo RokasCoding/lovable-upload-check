@@ -10,33 +10,27 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [bonusEntries, setBonusEntries] = useState<BonusEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    const fetchBonusEntries = async () => {
-      setIsLoading(true);
-      try {
-        if (currentUser) {
-          const entries = await getBonusEntries(currentUser.id);
+    if (user) {
+      const fetchBonusEntries = async () => {
+        setIsLoading(true);
+        try {
+          const entries = await getBonusEntries(user.id);
           setBonusEntries(entries);
+        } catch (error) {
+          console.error('Failed to fetch bonus entries:', error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Failed to fetch bonus entries:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBonusEntries();
-  }, [currentUser?.id, isAuthenticated, navigate]);
+      };
+      fetchBonusEntries();
+    }
+  }, [user]);
 
   const totalPoints = bonusEntries.reduce(
     (sum, entry) => sum + entry.pointsAwarded,
@@ -50,7 +44,7 @@ const Dashboard: React.FC = () => {
           {/* Points summary card */}
           <Card className="flex-1 bg-background border-border animate-fade-in">
             <CardHeader>
-              <CardTitle className="text-foreground">Jūsų premijos taškai</CardTitle>
+              <CardTitle className="text-foreground">Sveiki, {user?.user_metadata.name || 'Naudotojau'}!</CardTitle>
               <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
             </CardHeader>
             <CardContent>
@@ -59,7 +53,7 @@ const Dashboard: React.FC = () => {
                   {isLoading ? (
                     <Skeleton className="h-12 w-24 bg-muted" />
                   ) : (
-                    currentUser?.totalPoints
+                    user?.user_metadata.totalPoints || 0
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>

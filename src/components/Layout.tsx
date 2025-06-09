@@ -1,23 +1,25 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { User, ExternalLink } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { currentUser, isAuthenticated, logout, isAdmin } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/login');
   };
+
+  const isAdmin = user?.user_metadata.role === 'admin';
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -34,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">
-            {isAuthenticated && (
+            {user && (
               <>
                 <Link to="/dashboard" className="text-vcs-black hover:text-vcs-blue transition-colors font-medium">
                   Pagrindinis
@@ -70,20 +72,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vcs-blue text-white">
-                      {currentUser?.name.charAt(0) || <User size={22} />}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      {user.user_metadata.name?.charAt(0) || user.email?.charAt(0)}
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{currentUser?.name}</p>
-                      <p className="text-sm text-muted-foreground">{currentUser?.email}</p>
+                      <p className="font-medium">{user.user_metadata.name || user.email}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
@@ -123,7 +124,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       {/* Mobile Navigation Bar (shown only on small screens) */}
-      {isAuthenticated && (
+      {user && (
         <div className="md:hidden bg-white border-t border-vcs-black">
           <div className="container mx-auto flex justify-between">
             <Link to="/dashboard" className="flex-1 text-center py-3 text-vcs-black hover:bg-vcs-blue hover:text-white transition-colors">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { getPrizes, requestRedemption } from '@/services/dataService';
@@ -11,8 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Prizes: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,11 +19,6 @@ const Prizes: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
     const fetchPrizes = async () => {
       setIsLoading(true);
       try {
@@ -39,15 +32,15 @@ const Prizes: React.FC = () => {
     };
 
     fetchPrizes();
-  }, [isAuthenticated, navigate]);
+  }, []);
 
   const handlePrizeSelect = (prize: Prize) => {
-    if (!currentUser) return;
+    if (!user) return;
     
-    if (currentUser.totalPoints < prize.pointCost) {
+    if ((user.user_metadata.totalPoints || 0) < prize.pointCost) {
       toast({
         title: "Nepakankamai taškų",
-        description: `Jums reikia dar ${prize.pointCost - currentUser.totalPoints} taškų, kad galėtumėte iškeisti šį prizą.`,
+        description: `Jums reikia dar ${prize.pointCost - (user.user_metadata.totalPoints || 0)} taškų, kad galėtumėte iškeisti šį prizą.`,
         variant: "destructive",
       });
       return;
@@ -58,14 +51,14 @@ const Prizes: React.FC = () => {
   };
 
   const handleRedeemPrize = async () => {
-    if (!currentUser || !selectedPrize) return;
+    if (!user || !selectedPrize) return;
     
     setIsSubmitting(true);
     
     try {
       await requestRedemption({
-        userId: currentUser.id,
-        userName: currentUser.name,
+        userId: user.id,
+        userName: user.user_metadata.name || user.email,
         prizeId: selectedPrize.id,
         prizeName: selectedPrize.name,
         pointCost: selectedPrize.pointCost,
@@ -73,13 +66,10 @@ const Prizes: React.FC = () => {
       
       toast({
         title: "Užklausa pateikta",
-        description: "Jūsų prizo iškeitimo užklausa pateikta patvirtinimui.",
+        description: "Jūsų prizo iškeitimo užklausa sėkmingai pateikta administratoriui.",
       });
       
       setIsDialogOpen(false);
-      
-      // Update user's points client-side for immediate feedback
-      currentUser.totalPoints -= selectedPrize.pointCost;
     } catch (error: any) {
       console.error('Failed to redeem prize:', error);
       toast({
@@ -102,7 +92,7 @@ const Prizes: React.FC = () => {
           </div>
           <div className="bg-muted px-4 py-2 rounded-md">
             <span className="text-sm text-foreground">Jūsų taškai:</span>
-            <span className="ml-2 font-bold text-primary">{currentUser?.totalPoints || 0}</span>
+            <span className="ml-2 font-bold text-primary">{user?.user_metadata.totalPoints || 0}</span>
           </div>
         </div>
         
@@ -127,7 +117,7 @@ const Prizes: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prizes.map((prize) => {
-              const canAfford = currentUser?.totalPoints && currentUser.totalPoints >= prize.pointCost;
+              const canAfford = user?.user_metadata.totalPoints && user.user_metadata.totalPoints >= prize.pointCost;
               
               return (
                 <Card 
@@ -207,7 +197,7 @@ const Prizes: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Jūsų likutis po iškeitimo:</span>
                   <span className="font-medium text-primary">
-                    {currentUser ? currentUser.totalPoints - selectedPrize.pointCost : 0} taškų
+                    {user ? (user.user_metadata.totalPoints || 0) - selectedPrize.pointCost : 0} taškų
                   </span>
                 </div>
               </div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { 
@@ -29,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useNavigate } from 'react-router-dom';
 
 // Import the new components
 import { AdminStats } from '@/components/admin/AdminStats';
@@ -39,9 +39,9 @@ import { AdminRedemptions } from '@/components/admin/AdminRedemptions';
 import { AdminDialogs } from '@/components/admin/AdminDialogs';
 
 const Admin: React.FC = () => {
-  const { isAuthenticated, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
@@ -93,12 +93,13 @@ const Admin: React.FC = () => {
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null);
   const [pointHistory, setPointHistory] = useState<BonusEntry[]>([]);
 
+  const isAdmin = user?.user_metadata.role === 'admin';
+
   useEffect(() => {
-    if (!isAuthenticated || !isAdmin) {
+    if (!isAdmin) {
       navigate('/dashboard');
       return;
     }
-
     const fetchData = async () => {
       setIsLoading(true);
       try {
@@ -121,7 +122,7 @@ const Admin: React.FC = () => {
     };
 
     fetchData();
-  }, [isAdmin, isAuthenticated, navigate]);
+  }, [isAdmin, navigate]);
 
   const handleInviteUser = async () => {
     if (!inviteName || !inviteEmail) {

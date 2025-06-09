@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,106 +7,82 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { signInWithEmail, signUpWithEmail, supabase } from '@/lib/supabase';
-
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return null; // or a spinner
-  return user ? children : <Navigate to="/login" />;
-};
+import { supabase } from '@/lib/supabase';
 
 const Login: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
   const [activeTab, setActiveTab] = useState('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Login form state
+  
+  // Form states
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  // Register form state
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('');
 
   useEffect(() => {
+    // If user is already logged in, redirect to dashboard
     if (!loading && user) {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const { data, error } = await signInWithEmail(loginEmail, loginPassword);
-      if (error) {
-        toast({
-          title: 'Klaida',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else if (data?.user) {
-        navigate('/dashboard');
-      }
-    } finally {
-      setIsSubmitting(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+    if (error) {
+      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
     }
+    // No need to navigate, the useEffect will handle it on auth state change
+    setIsSubmitting(false);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const { data, error } = await signUpWithEmail(registerEmail, registerPassword, { name: registerName });
-      if (error) {
-        toast({
-          title: 'Klaida',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else if (data?.user) {
-        setActiveTab('login');
-        setLoginEmail(registerEmail);
-        setLoginPassword(registerPassword);
-        toast({
-          title: 'Registracija sėkminga',
-          description: 'Prašome prisijungti su nauja paskyra.',
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
+    const { error } = await supabase.auth.signUp({
+      email: registerEmail,
+      password: registerPassword,
+      options: {
+        data: { name: registerName },
+      },
+    });
+    if (error) {
+      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Registracija sėkminga', description: 'Patikrinkite savo el. paštą, kad patvirtintumėte paskyrą.' });
+      setActiveTab('login');
     }
+    setIsSubmitting(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${import.meta.env.VITE_APP_URL}/reset-password`
-      });
-      if (error) {
-        toast({
-          title: 'Klaida',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Slaptažodžio atstatymas',
-          description: 'Patikrinkite savo el. paštą ir sekite nuorodą slaptažodžio atstatymui.',
-        });
-        setForgotEmail('');
-      }
-    } finally {
-      setIsSubmitting(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast({ title: 'Klaida', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Slaptažodžio atstatymas', description: 'Patikrinkite savo el. paštą ir sekite instrukcijas.' });
     }
+    setIsSubmitting(false);
   };
+
+  // While loading, we can show a blank page or a spinner
+  if (loading) {
+    return null; 
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
@@ -124,45 +100,39 @@ const Login: React.FC = () => {
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-3 mb-4 bg-muted border-border">
-              <TabsTrigger value="login" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Prisijungimas</TabsTrigger>
-              <TabsTrigger value="register" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Registracija</TabsTrigger>
-              <TabsTrigger value="forgot" className="text-foreground data-[state=active]:bg-background data-[state=active]:text-primary">Pamiršau</TabsTrigger>
+              <TabsTrigger value="login">Prisijungimas</TabsTrigger>
+              <TabsTrigger value="register">Registracija</TabsTrigger>
+              <TabsTrigger value="forgot">Pamiršau</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-foreground font-medium" htmlFor="email">El. paštas</label>
+                    <Label htmlFor="email">El. paštas</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="jus@pvz.lt" 
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-foreground font-medium" htmlFor="password">Slaptažodis</label>
+                    <Label htmlFor="password">Slaptažodis</Label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="flex-col space-y-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                    disabled={isSubmitting}
-                  >
+                <CardFooter>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Prisijungiama...' : 'Prisijungti'}
                   </Button>
                 </CardFooter>
@@ -170,88 +140,73 @@ const Login: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="register">
-              <CardContent>
-                <form onSubmit={handleRegister} className="space-y-4">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <CardContent>
                   <div className="space-y-2">
-                    <Label htmlFor="register-name" className="text-foreground font-medium">Vardas ir pavardė</Label>
+                    <Label htmlFor="register-name">Vardas ir pavardė</Label>
                     <Input
                       id="register-name"
                       placeholder="Jonas Jonaitis"
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-foreground font-medium">El. paštas</Label>
+                    <Label htmlFor="register-email">El. paštas</Label>
                     <Input
                       id="register-email"
                       type="email"
                       placeholder="jus@pvz.lt"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-password" className="text-foreground font-medium">Slaptažodis</Label>
+                    <Label htmlFor="register-password">Slaptažodis</Label>
                     <Input
                       id="register-password"
                       type="password"
                       placeholder="••••••••"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                    disabled={isSubmitting}
-                  >
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Registruojama...' : 'Registruotis'}
                   </Button>
-                </form>
-              </CardContent>
+                </CardFooter>
+              </form>
             </TabsContent>
             
             <TabsContent value="forgot">
-              <CardContent>
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <CardContent>
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email" className="text-foreground font-medium">El. paštas</Label>
+                    <Label htmlFor="reset-email">El. paštas</Label>
                     <Input
                       id="reset-email"
                       type="email"
                       placeholder="jus@pvz.lt"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="border-border focus:border-primary text-foreground"
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Siunčiama...' : 'Siųsti atstatymo nuorodą'}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      className="text-foreground hover:bg-muted" 
-                      onClick={() => setActiveTab('login')}
-                    >
-                      Grįžti į prisijungimą
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
+                </CardContent>
+                <CardFooter className="flex-col gap-2">
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? 'Siunčiama...' : 'Siųsti atstatymo nuorodą'}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setActiveTab('login')}>
+                    Grįžti į prisijungimą
+                  </Button>
+                </CardFooter>
+              </form>
             </TabsContent>
           </Tabs>
         </Card>

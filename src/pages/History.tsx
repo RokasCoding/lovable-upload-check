@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { getRedemptions } from '@/services/dataService';
@@ -12,32 +11,27 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const History: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [redemptions, setRedemptions] = useState<PrizeRedemption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
-    if (!isAuthenticated || !currentUser) {
-      navigate('/login');
-      return;
+    if (user) {
+      const fetchRedemptions = async () => {
+        setIsLoading(true);
+        try {
+          const data = await getRedemptions(user.id);
+          setRedemptions(data);
+        } catch (error) {
+          console.error('Failed to fetch redemptions:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchRedemptions();
     }
-
-    const fetchRedemptions = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getRedemptions(currentUser.id);
-        setRedemptions(data);
-      } catch (error) {
-        console.error('Failed to fetch redemptions:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRedemptions();
-  }, [currentUser, isAuthenticated, navigate]);
+  }, [user]);
 
   const getStatusBadge = (status: 'pending' | 'approved' | 'rejected') => {
     switch (status) {
