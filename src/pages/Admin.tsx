@@ -11,7 +11,8 @@ import {
   createPrize,
   processRedemption,
   deductPoints,
-  getUserPointHistory
+  getUserPointHistory,
+  createRegistrationLink
 } from '@/services/dataService';
 import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -369,16 +370,9 @@ const Admin: React.FC = () => {
   const generateRegistrationLink = async () => {
     setIsGeneratingLink(true);
     try {
-      const { data, error } = await supabase
-        .from('registration_links')
-        .insert({
-          created_by: user?.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      if (!user) throw new Error('User not authenticated');
+      
+      const data = await createRegistrationLink(user.id);
       setRegistrationLinks(prev => [data, ...prev]);
       
       // Copy link to clipboard

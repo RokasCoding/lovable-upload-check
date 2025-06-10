@@ -1,6 +1,7 @@
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import * as supabaseService from './supabaseService';
 import { sendInviteEmail, sendPrizeRedemptionEmail } from '@/lib/email';
+import { supabase } from '@/lib/supabase';
 
 // Helper function to simulate API call delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -174,4 +175,27 @@ export const getUserPointHistory = async (userId: string): Promise<BonusEntry[]>
   }
   
   return await supabaseService.getBonusEntries(userId);
+};
+
+// Registration link functions
+export const createRegistrationLink = async (userId: string) => {
+  try {
+    const { data: adminData } = await supabase.auth.getUser();
+    const adminUser = adminData.user;
+    
+    if (!adminUser || adminUser.user_metadata.role !== 'admin') {
+      throw new Error('Only admins can create registration links');
+    }
+    
+    // Create the registration link with direct SQL query to bypass RLS
+    const { data, error } = await supabase.rpc('create_registration_link', {
+      creator_id: userId
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Failed to create registration link:', error);
+    throw new Error(error.message || 'Failed to create registration link');
+  }
 };
