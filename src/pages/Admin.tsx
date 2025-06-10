@@ -165,10 +165,21 @@ const Admin: React.FC = () => {
   }, [toast]);
 
   const handleInviteUser = async () => {
-    if (!inviteName || !inviteEmail) {
+    if (!inviteName.trim() || !inviteEmail.trim()) {
       toast({
         title: "Klaida",
         description: "Prašome užpildyti visus privalomus laukus",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      toast({
+        title: "Klaida",
+        description: "Neteisingas el. pašto formato",
         variant: "destructive",
       });
       return;
@@ -200,6 +211,15 @@ const Admin: React.FC = () => {
   };
 
   const handleCreatePrize = async () => {
+    if (!prizeName.trim() || !prizeDescription.trim()) {
+      toast({
+        title: "Klaida",
+        description: "Pavadinimas ir aprašymas negali būti tušti",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsProcessing(true);
     try {
       const points = parseInt(prizePoints);

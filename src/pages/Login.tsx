@@ -73,7 +73,7 @@ const Login: React.FC = () => {
               className="h-16 object-contain"
             />
           </div>
-          <h1 className="text-4xl font-bold text-foreground">Vilnius Coding School Bonus Sistema</h1>
+          <h1 className="text-4xl font-bold text-foreground">Bonus Sistema</h1>
           <p className="text-primary mt-2">Iškeiskite taškus į prizus</p>
         </div>
         

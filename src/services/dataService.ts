@@ -61,10 +61,19 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
     }
 
     return true;
-  } catch (error: any) {
-    console.error('Failed to invite user:', error);
-    throw new Error(error.message || 'Nepavyko išsiųsti pakvietimo');
-  }
+      } catch (error: any) {
+      console.error('Failed to invite user:', error);
+      const errorMessage = error.message || 'Nepavyko išsiųsti pakvietimo';
+      
+      // Provide more specific error messages
+      if (error.message?.includes('duplicate')) {
+        throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
+      } else if (error.message?.includes('invalid email')) {
+        throw new Error('Neteisingas el. pašto formatas');
+      }
+      
+      throw new Error(errorMessage);
+    }
 };
 
 // Bonus entries related functions

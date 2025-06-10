@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { useToast } from '@/hooks/use-toast';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15; // minutes
