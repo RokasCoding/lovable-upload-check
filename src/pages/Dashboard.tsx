@@ -161,7 +161,7 @@ const Dashboard: React.FC = () => {
               </div>
             ) : bonusEntries.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Kol kas nėra premijos taškų įrašų.
+                Nėra taškų istorijos.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -187,7 +187,11 @@ const Dashboard: React.FC = () => {
                           €{entry.price}
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="point-badge">+{entry.pointsAwarded}</span>
+                          <span className={`font-medium ${
+                            entry.pointsAwarded > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {entry.pointsAwarded > 0 ? '+' : ''}{entry.pointsAwarded}
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))}

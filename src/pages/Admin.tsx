@@ -869,35 +869,50 @@ const Admin: React.FC = () => {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              Taškų istorija - {selectedUserForHistory?.name}
+              Premijos taškų operacijos
             </DialogTitle>
+            <DialogDescription>
+              Jūsų baigti kursai ir uždirbti taškai
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="max-h-[400px] overflow-y-auto">
-              {pointHistory.map((entry) => (
-                <div
-                  key={entry.id}
-                  className={`p-4 border rounded-lg mb-2 ${
-                    entry.pointsAwarded > 0 ? 'bg-green-50' : 'bg-red-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-foreground">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Kursas</TableHead>
+                    <TableHead className="text-right">Kurso kaina</TableHead>
+                    <TableHead className="text-right">Uždirbti taškai</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pointHistory.map((entry) => (
+                    <TableRow key={entry.id} className={entry.pointsAwarded > 0 ? 'bg-green-50' : 'bg-red-50'}>
+                      <TableCell>
+                        {new Date(entry.createdAt).toLocaleString('lt-LT', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </TableCell>
+                      <TableCell className="font-medium">
                         {entry.courseName}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(entry.createdAt).toLocaleString('lt-LT')}
-                      </p>
-                    </div>
-                    <p className={`font-medium ${
-                      entry.pointsAwarded > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {entry.pointsAwarded > 0 ? '+' : ''}{entry.pointsAwarded} taškų
-                    </p>
-                  </div>
-                </div>
-              ))}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        €{entry.price}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`font-medium ${
+                          entry.pointsAwarded > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {entry.pointsAwarded > 0 ? '+' : ''}{entry.pointsAwarded}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
           <DialogFooter>
