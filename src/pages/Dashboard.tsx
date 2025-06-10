@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getBonusEntries } from '@/services/dataService';
-import { BonusEntry } from '@/types';
+import { getBonusEntries, getUserById } from '@/services/dataService';
+import { BonusEntry, User } from '@/types';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,29 +13,34 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [bonusEntries, setBonusEntries] = useState<BonusEntry[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     if (user) {
-      const fetchBonusEntries = async () => {
+      const fetchData = async () => {
         setIsLoading(true);
+        setIsLoadingUser(true);
         try {
-          const entries = await getBonusEntries(user.id);
+          const [entries, userData] = await Promise.all([
+            getBonusEntries(user.id),
+            getUserById(user.id)
+          ]);
           setBonusEntries(entries);
+          setCurrentUser(userData);
         } catch (error) {
-          console.error('Failed to fetch bonus entries:', error);
+          console.error('Failed to fetch dashboard data:', error);
         } finally {
           setIsLoading(false);
+          setIsLoadingUser(false);
         }
       };
-      fetchBonusEntries();
+      fetchData();
     }
   }, [user]);
 
-  const totalPoints = bonusEntries.reduce(
-    (sum, entry) => sum + entry.pointsAwarded,
-    0
-  );
+  const totalPoints = currentUser?.totalPoints || 0;
 
   return (
     <Layout>
@@ -50,10 +55,10 @@ const Dashboard: React.FC = () => {
             <CardContent>
               <div className="flex items-center justify-center flex-col">
                 <div className="text-5xl font-bold text-primary mb-2">
-                  {isLoading ? (
+                  {isLoadingUser ? (
                     <Skeleton className="h-12 w-24 bg-muted" />
                   ) : (
-                    user?.user_metadata.totalPoints || 0
+                    totalPoints
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
@@ -75,7 +80,7 @@ const Dashboard: React.FC = () => {
                   {isLoading ? (
                     <Skeleton className="h-5 w-16 inline-block bg-muted" />
                   ) : (
-                    totalPoints
+                    bonusEntries.reduce((sum, entry) => sum + entry.pointsAwarded, 0)
                   )}
                 </span>{" "}
                 uždirbti taškai

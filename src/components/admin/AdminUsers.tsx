@@ -84,7 +84,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="font-medium text-foreground">{user.totalPoints}</span>
+                      <span className="point-badge">{user.totalPoints}</span>
                     </TableCell>
                     <TableCell className="text-foreground">
                       {format(new Date(user.createdAt || Date.now()), 'yyyy-MM-dd')}

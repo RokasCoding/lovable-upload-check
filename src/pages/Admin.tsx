@@ -13,7 +13,8 @@ import {
   deductPoints,
   getUserPointHistory,
   createRegistrationLink,
-  deleteUser
+  deleteUser,
+  getAllPrizes
 } from '@/services/dataService';
 import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -130,7 +131,7 @@ const Admin: React.FC = () => {
         const [statsData, usersData, prizesData, redemptionsData] = await Promise.all([
           getStats(),
           getUsers(),
-          getPrizes(),
+          getAllPrizes(),
           getRedemptions(),
         ]);
         
@@ -254,7 +255,7 @@ const Admin: React.FC = () => {
       setNewPrizeDialogOpen(false);
       
       // Refresh prizes list
-      const refreshedPrizes = await getPrizes();
+      const refreshedPrizes = await getAllPrizes();
       setPrizes(refreshedPrizes);
     } catch (error: any) {
       toast({
@@ -640,7 +641,7 @@ const Admin: React.FC = () => {
               onCreatePrize={() => setNewPrizeDialogOpen(true)}
               onRefreshPrizes={async () => {
                 try {
-                  const prizesData = await getPrizes();
+                  const prizesData = await getAllPrizes();
                   setPrizes(prizesData);
                 } catch (error) {
                   console.error('Failed to refresh prizes:', error);
