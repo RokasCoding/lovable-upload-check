@@ -102,30 +102,30 @@ export interface Database {
           created_at: string
           name: string
           description: string
-          point_cost: number
+          points: number
           image_url: string | null
-          active: boolean
+          is_active: boolean
         }
         Insert: {
           id?: string
           created_at?: string
           name: string
           description: string
-          point_cost: number
+          points: number
           image_url?: string | null
-          active?: boolean
+          is_active?: boolean
         }
         Update: {
           id?: string
           created_at?: string
           name?: string
           description?: string
-          point_cost?: number
+          points?: number
           image_url?: string | null
-          active?: boolean
+          is_active?: boolean
         }
       }
-      redemptions: {
+      prize_redemptions: {
         Row: {
           id: string
           created_at: string
@@ -164,6 +164,35 @@ export interface Database {
           requested_at?: string
           updated_at?: string | null
           comment?: string | null
+        }
+      }
+      registration_links: {
+        Row: {
+          id: string
+          created_at: string
+          created_by: string
+          link_token: string
+          is_active: boolean
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          created_by: string
+          link_token?: string
+          is_active?: boolean
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          created_by?: string
+          link_token?: string
+          is_active?: boolean
+          used_at?: string | null
+          used_by?: string | null
         }
       }
     }

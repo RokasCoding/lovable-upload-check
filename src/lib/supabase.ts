@@ -93,16 +93,16 @@ export const getPrizes = async () => {
   const { data, error } = await supabase
     .from('prizes')
     .select('*')
-    .eq('active', true);
+    .eq('is_active', true);
   return { data, error };
 };
 
 export const createPrize = async (prize: {
   name: string;
   description: string;
-  point_cost: number;
+  points: number;
   image_url?: string;
-  active: boolean;
+  is_active: boolean;
 }) => {
   const { data, error } = await supabase
     .from('prizes')
@@ -114,7 +114,7 @@ export const createPrize = async (prize: {
 
 export const getRedemptions = async (userId?: string) => {
   let query = supabase
-    .from('redemptions')
+    .from('prize_redemptions')
     .select('*')
     .order('requested_at', { ascending: false });
 
@@ -134,7 +134,7 @@ export const createRedemption = async (redemption: {
   point_cost: number;
 }) => {
   const { data, error } = await supabase
-    .from('redemptions')
+    .from('prize_redemptions')
     .insert([{
       ...redemption,
       status: 'pending',
@@ -151,7 +151,7 @@ export const updateRedemptionStatus = async (
   comment?: string
 ) => {
   const { data, error } = await supabase
-    .from('redemptions')
+    .from('prize_redemptions')
     .update({
       status,
       comment,
