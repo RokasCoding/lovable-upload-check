@@ -16,12 +16,14 @@ const Dashboard: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
         setIsLoading(true);
         setIsLoadingUser(true);
+        setError(null);
         try {
           const [entries, userData] = await Promise.all([
             getBonusEntries(user.id),
@@ -31,6 +33,7 @@ const Dashboard: React.FC = () => {
           setCurrentUser(userData);
         } catch (error) {
           console.error('Failed to fetch dashboard data:', error);
+          setError('Nepavyko užkrauti duomenų. Bandykite dar kartą.');
         } finally {
           setIsLoading(false);
           setIsLoadingUser(false);
@@ -40,8 +43,20 @@ const Dashboard: React.FC = () => {
     }
   }, [user]);
 
-  const totalPoints = currentUser?.totalPoints || 0;
+  const totalPoints = currentUser?.totalPoints ?? 0;
   const earnedPoints = bonusEntries.reduce((sum, entry) => sum + entry.pointsAwarded, 0);
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
+            {error}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -50,7 +65,13 @@ const Dashboard: React.FC = () => {
           {/* Points summary card */}
           <Card className="flex-1 bg-background border-border animate-fade-in">
             <CardHeader>
-              <CardTitle className="text-foreground">Sveiki, {currentUser?.name || user?.user_metadata.name || 'Naudotojau'}!</CardTitle>
+              <CardTitle className="text-foreground">
+                {isLoadingUser ? (
+                  <Skeleton className="h-6 w-48 bg-muted" />
+                ) : (
+                  `Sveiki, ${currentUser?.name || user?.user_metadata.name || 'Naudotojau'}!`
+                )}
+              </CardTitle>
               <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
             </CardHeader>
             <CardContent>
