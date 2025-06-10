@@ -448,22 +448,7 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleAssignPrize = async (userId: string, prizeId: string) => {
-    try {
-      // This would be implemented to assign a prize to a new member
-      // and send email to akvile.n@vilniuscoding.lt
-      toast({
-        title: "Sėkmė",
-        description: "Prizas paskirtas ir el. laiškas išsiųstas",
-      });
-    } catch (error) {
-      toast({
-        title: "Klaida",
-        description: "Nepavyko paskirti prizo",
-        variant: "destructive",
-      });
-    }
-  };
+
 
   const handleDeductPoints = async () => {
     if (!selectedUserForDeduction || !pointsToDeduct || !deductionReason) {
@@ -621,7 +606,6 @@ const Admin: React.FC = () => {
             <AdminNewMembers 
               users={users} 
               isLoading={isLoading} 
-              onAssignPrize={handleAssignPrize} 
             />
           </TabsContent>
           

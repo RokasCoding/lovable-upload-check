@@ -396,11 +396,12 @@ export const getStats = async (): Promise<Stats> => {
   const averagePoints = totalUsers > 0 ? Math.round(totalPoints / totalUsers) : 0;
 
   const topUsers = usersResult.data
+    .filter(user => user.name) // Filter out users without names
     .sort((a, b) => b.total_points - a.total_points)
     .slice(0, 5)
     .map(user => ({
       name: user.name,
-      points: user.total_points,
+      points: user.total_points || 0,
     }));
 
   // Calculate popular prizes

@@ -24,6 +24,15 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
     points: user.points,
   })) || [];
 
+  // Debug logging
+  React.useEffect(() => {
+    if (stats && !isLoading) {
+      console.log('AdminStats - Current stats:', stats);
+      console.log('AdminStats - topUsers data:', stats.topUsers);
+      console.log('AdminStats - userPointsData:', userPointsData);
+    }
+  }, [stats, isLoading, userPointsData]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -141,7 +150,10 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
               </div>
             ) : userPointsData.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-500">
-                Nėra naudotojų taškų duomenų
+                <div className="text-center">
+                  <p>Nėra naudotojų taškų duomenų</p>
+                  <p className="text-xs mt-2">Patikrinkite ar visi naudotojai turi priskirtus taškus</p>
+                </div>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -152,15 +164,20 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
                   <XAxis 
                     dataKey="name" 
-                    tick={{ fill: '#666' }} 
+                    tick={{ fill: '#666', fontSize: 12 }} 
                     angle={-45} 
                     textAnchor="end"
                     height={60}
+                    interval={0}
                   />
-                  <YAxis tick={{ fill: '#666' }} />
+                  <YAxis 
+                    tick={{ fill: '#666' }}
+                    domain={[0, 'dataMax + 50']}
+                  />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '4px' }}
                     labelStyle={{ color: '#000' }}
+                    formatter={(value) => [`${value} taškų`, 'Taškai']}
                   />
                   <Bar dataKey="points" fill="#3535FF" radius={[4, 4, 0, 0]} />
                 </BarChart>

@@ -242,13 +242,13 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="prize-image">Nuotraukos URL</Label>
+              <Label htmlFor="prize-image">Nuotraukos URL (neprivaloma)</Label>
               <Input
                 id="prize-image"
                 type="url"
                 value={prizeImage}
                 onChange={(e) => setPrizeImage(e.target.value)}
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg (neprivaloma)"
                 className="bg-gray-50 text-black border-gray-300"
               />
             </div>
@@ -265,7 +265,7 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
             <Button
               type="button"
               onClick={onCreatePrize}
-              disabled={!prizeName || !prizeDescription || !prizePoints || !prizeImage}
+              disabled={!prizeName || !prizeDescription || !prizePoints}
             >
               Pridėti prizą
             </Button>
@@ -294,11 +294,25 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
                   {users
                     .filter(user => user.role === 'user')
                     .map(user => (
-                      <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                      <SelectItem key={user.id} value={user.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{user.name}</span>
+                          <span className="text-xs text-gray-500">{user.email} • {user.totalPoints} taškų</span>
+                        </div>
+                      </SelectItem>
                     ))
                   }
                 </SelectContent>
               </Select>
+              {bonusUserId && (
+                <div className="mt-2 p-2 bg-gray-100 rounded text-sm">
+                  <strong>Pasirinktas naudotojas:</strong> {users.find(u => u.id === bonusUserId)?.name || 'Naudotojas nerastas'}
+                  <br />
+                  <span className="text-gray-600">
+                    Dabartiniai taškai: {users.find(u => u.id === bonusUserId)?.totalPoints || 0}
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">

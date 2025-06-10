@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
-import { getPrizes, createRedemption } from '@/services/dataService';
-import { Prize } from '@/types';
+import { getPrizes, createRedemption, getUserById } from '@/services/dataService';
+import { Prize, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,7 +13,9 @@ const Prizes: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [prizes, setPrizes] = useState<Prize[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUserPoints, setIsLoadingUserPoints] = useState(true);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,13 +36,33 @@ const Prizes: React.FC = () => {
     fetchPrizes();
   }, []);
 
+  useEffect(() => {
+    const fetchUserPoints = async () => {
+      if (!user?.id) return;
+      
+      setIsLoadingUserPoints(true);
+      try {
+        const userData = await getUserById(user.id);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Failed to fetch user points:', error);
+      } finally {
+        setIsLoadingUserPoints(false);
+      }
+    };
+
+    fetchUserPoints();
+  }, [user?.id]);
+
+  const userPoints = currentUser?.totalPoints || 0;
+
   const handlePrizeSelect = (prize: Prize) => {
     if (!user) return;
     
-    if ((user.user_metadata.totalPoints || 0) < prize.points) {
+    if (userPoints < prize.points) {
       toast({
         title: "Nepakankamai taškų",
-        description: `Jums reikia dar ${prize.points - (user.user_metadata.totalPoints || 0)} taškų, kad galėtumėte iškeisti šį prizą.`,
+        description: `Jums reikia dar ${prize.points - userPoints} taškų, kad galėtumėte iškeisti šį prizą.`,
         variant: "destructive",
       });
       return;
@@ -63,6 +85,14 @@ const Prizes: React.FC = () => {
       });
       
       setIsDialogOpen(false);
+      
+      // Refresh user points after redemption
+      try {
+        const userData = await getUserById(user.id);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Failed to refresh user points:', error);
+      }
     } catch (error: any) {
       toast({
         title: "Klaida",
@@ -84,7 +114,11 @@ const Prizes: React.FC = () => {
           </div>
           <div className="bg-muted px-4 py-2 rounded-md">
             <span className="text-sm text-foreground">Jūsų taškai:</span>
-            <span className="ml-2 font-bold text-primary">{user?.user_metadata.totalPoints || 0}</span>
+            {isLoadingUserPoints ? (
+              <Skeleton className="ml-2 h-5 w-12 inline-block bg-muted-foreground/20" />
+            ) : (
+              <span className="ml-2 font-bold text-primary">{userPoints}</span>
+            )}
           </div>
         </div>
         
@@ -109,7 +143,7 @@ const Prizes: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prizes.map((prize) => {
-              const canAfford = user?.user_metadata.totalPoints && user.user_metadata.totalPoints >= prize.points;
+              const canAfford = userPoints >= prize.points;
               
               return (
                 <Card 
@@ -143,7 +177,7 @@ const Prizes: React.FC = () => {
                     <Button 
                       className={`w-full ${canAfford ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
                       onClick={() => canAfford && handlePrizeSelect(prize)}
-                      disabled={!canAfford}
+                      disabled={!canAfford || isLoadingUserPoints}
                     >
                       {canAfford ? 'Iškeisti prizą' : 'Nepakankamai taškų'}
                     </Button>
@@ -189,7 +223,7 @@ const Prizes: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Jūsų likutis po iškeitimo:</span>
                   <span className="font-medium text-primary">
-                    {user ? (user.user_metadata.totalPoints || 0) - selectedPrize.points : 0} taškų
+                    {userPoints - selectedPrize.points} taškų
                   </span>
                 </div>
               </div>
