@@ -128,6 +128,11 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
+          <img 
+            src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
+            alt="Vilnius Coding School Logo" 
+            className="h-16 object-contain mx-auto mb-4"
+          />
           <h1 className="text-4xl font-bold text-foreground">Vilnius Coding School Bonus Sistema</h1>
           <p className="text-primary mt-2">Sukurkite savo paskyrą</p>
         </div>
