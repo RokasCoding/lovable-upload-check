@@ -76,11 +76,11 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center flex-col">
-                <div className="text-5xl font-bold text-primary mb-2">
+                <div className="text-5xl font-bold mb-2">
                   {isLoadingUser ? (
                     <Skeleton className="h-12 w-24 bg-muted" />
                   ) : (
-                    <span className="point-badge text-4xl">{totalPoints}</span>
+                    <span className="point-badge text-4xl !text-blue-700 dark:!text-blue-300">{totalPoints}</span>
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>

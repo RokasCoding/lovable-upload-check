@@ -68,7 +68,7 @@ export const AdminNewMembers: React.FC<AdminNewMembersProps> = ({
                       {user.createdAt ? format(new Date(user.createdAt), 'yyyy-MM-dd') : '-'}
                     </TableCell>
                     <TableCell>
-                      <span className="point-badge">{user.totalPoints || 0}</span>
+                      <span className="point-badge !text-blue-700 dark:!text-blue-300">{user.totalPoints || 0}</span>
                     </TableCell>
                     <TableCell className="text-black">
                       {user.role === 'admin' ? 'Administratorius' : 'Naudotojas'}

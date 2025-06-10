@@ -182,7 +182,7 @@ export const deductPoints = async (userId: string, points: number, reason: strin
   };
   
   await supabaseService.createBonusEntry(newEntry);
-  await supabaseService.updateUserPoints(userId, user.totalPoints - points);
+  // Database trigger automatically updates user's total_points when bonus entries are created
   
   return true;
 };
