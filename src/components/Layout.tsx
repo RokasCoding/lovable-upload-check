@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className="h-8 object-contain"
               />
             </div>
-            <span className="hidden sm:inline-block text-xl font-semibold text-vcs-black ml-2">VCS Bonus Sistema</span>
+            <span className="hidden sm:inline-block text-xl font-semibold text-vcs-black ml-2">Bonus Sistema</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">

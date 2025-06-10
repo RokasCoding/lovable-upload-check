@@ -1,6 +1,6 @@
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import * as supabaseService from './supabaseService';
-import { sendInviteEmail, sendPrizeRedemptionEmail } from '@/lib/email';
+import { sendInviteEmail, sendPrizeRedemptionEmail, sendPointsDeductionEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 
 // Helper function to simulate API call delay
@@ -143,13 +143,25 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
     pointCost: prize.points,
   });
 
-  // Send email to admin
-  await sendPrizeRedemptionEmail(
-    'akvile.n@vilniuscoding.lt',
-    user.name,
-    prize.name,
-    redemption.id
-  );
+  // Get all admin users to send notifications
+  const { data: adminUsers, error: adminError } = await supabase
+    .from('users')
+    .select('email')
+    .eq('role', 'admin');
+
+  if (!adminError && adminUsers) {
+    // Send notifications to all admin users
+    await Promise.all(
+      adminUsers.map(admin => 
+        sendPrizeRedemptionEmail(
+          admin.email,
+          user.name,
+          prize.name,
+          redemption.id
+        )
+      )
+    );
+  }
 
   return redemption;
 };
@@ -183,6 +195,26 @@ export const deductPoints = async (userId: string, points: number, reason: strin
   
   await supabaseService.createBonusEntry(newEntry);
   // Database trigger automatically updates user's total_points when bonus entries are created
+
+  // Get all admin users to send notifications
+  const { data: adminUsers, error: adminError } = await supabase
+    .from('users')
+    .select('email')
+    .eq('role', 'admin');
+
+  if (!adminError && adminUsers) {
+    // Send notifications to all admin users
+    await Promise.all(
+      adminUsers.map(admin => 
+        sendPointsDeductionEmail(
+          admin.email,
+          user.name,
+          points,
+          reason
+        )
+      )
+    );
+  }
   
   return true;
 };

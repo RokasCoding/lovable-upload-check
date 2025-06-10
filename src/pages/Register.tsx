@@ -10,6 +10,7 @@ import { AuthService } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { sendNewUserRegistrationEmail } from '@/lib/email';
 
 const Register: React.FC = () => {
   const { user, loading } = useAuth();
@@ -97,6 +98,21 @@ const Register: React.FC = () => {
       });
       
       if (error) throw error;
+
+      // Get all admin users to send notifications
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('role', 'admin');
+
+      if (!adminError && adminUsers) {
+        // Send notifications to all admin users
+        await Promise.all(
+          adminUsers.map(admin => 
+            sendNewUserRegistrationEmail(admin.email, name)
+          )
+        );
+      }
 
       toast({ 
         title: 'Registracija sėkminga', 

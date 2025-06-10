@@ -66,36 +66,45 @@ export const sendRedemptionStatusEmail = async (
 };
 
 export const sendPointsDeductionEmail = async (
-  userId: string,
-  name: string,
+  adminEmail: string,
+  userName: string,
   points: number,
   reason: string
 ) => {
   try {
-    // Update user metadata to trigger email notification
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        notification: {
-          type: 'points_deduction',
-          name,
-          points,
-          reason,
-          timestamp: new Date().toISOString()
-        }
-      }
-    });
+    // Get admin user to check notification settings
+    const { data: adminData, error: adminError } = await supabase
+      .from('users')
+      .select('user_metadata')
+      .eq('email', adminEmail)
+      .single();
 
-    if (error) {
-      console.error('Error sending points deduction notification:', error);
-      return { success: false, error: error.message };
+    if (adminError) throw adminError;
+
+    // Check if points deduction notifications are enabled
+    const settings = adminData?.user_metadata?.notificationSettings;
+    if (!settings?.pointsDeductions) {
+      console.log('Points deduction notifications are disabled for this admin');
+      return { success: true };
     }
 
-    return { success: true };
+    const html = `
+      <h2>Taškų atėmimas</h2>
+      <p>Naudotojui ${userName} buvo atimta ${points} taškų.</p>
+      <p>Priežastis: ${reason}</p>
+      <p>Galite peržiūrėti detalesnę informaciją administratoriaus skydelyje.</p>
+    `;
+
+    return sendEmail({
+      to: adminEmail,
+      subject: 'Taškų atėmimas',
+      html,
+    });
   } catch (error: any) {
-    console.error('Failed to send points deduction notification:', error);
+    console.error('Failed to send points deduction email:', error);
     return { 
       success: false, 
-      error: error.message || 'Nepavyko išsiųsti pranešimo' 
+      error: error.message || 'Nepavyko išsiųsti el. laiško' 
     };
   }
 };
@@ -126,23 +135,154 @@ export const sendPrizeRedemptionEmail = async (
   prizeName: string,
   redemptionId: string
 ) => {
-  const confirmUrl = `${window.location.origin}/admin?tab=redemptions&confirm=${redemptionId}`;
-  const rejectUrl = `${window.location.origin}/admin?tab=redemptions&reject=${redemptionId}`;
+  try {
+    // Get admin user to check notification settings
+    const { data: adminData, error: adminError } = await supabase
+      .from('users')
+      .select('user_metadata')
+      .eq('email', adminEmail)
+      .single();
 
-  const html = `
-    <h2>Naujas prizo išpirkimo prašymas</h2>
-    <p>Naudotojas ${userName} nori išpirkti prizą "${prizeName}".</p>
-    <p>Norėdami patvirtinti arba atmesti prašymą, spauskite vieną iš šių nuorodų:</p>
-    <p>
-      <a href="${confirmUrl}" style="display: inline-block; padding: 10px 20px; margin-right: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Patvirtinti</a>
-      <a href="${rejectUrl}" style="display: inline-block; padding: 10px 20px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px;">Atmesti</a>
-    </p>
-    <p>Arba galite tai padaryti administratoriaus skydelyje.</p>
-  `;
+    if (adminError) throw adminError;
 
-  return sendEmail({
-    to: adminEmail,
-    subject: `Naujas prizo išpirkimo prašymas - ${prizeName}`,
-    html,
-  });
+    // Check if prize redemption notifications are enabled
+    const settings = adminData?.user_metadata?.notificationSettings;
+    if (!settings?.prizeRedemptions) {
+      console.log('Prize redemption notifications are disabled for this admin');
+      return { success: true };
+    }
+
+    const confirmUrl = `${window.location.origin}/admin?tab=redemptions&confirm=${redemptionId}`;
+    const rejectUrl = `${window.location.origin}/admin?tab=redemptions&reject=${redemptionId}`;
+
+    const html = `
+      <h2>Naujas prizo išpirkimo prašymas</h2>
+      <p>Naudotojas ${userName} nori išpirkti prizą "${prizeName}".</p>
+      <p>Norėdami patvirtinti arba atmesti prašymą, spauskite vieną iš šių nuorodų:</p>
+      <p>
+        <a href="${confirmUrl}" style="display: inline-block; padding: 10px 20px; margin-right: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Patvirtinti</a>
+        <a href="${rejectUrl}" style="display: inline-block; padding: 10px 20px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px;">Atmesti</a>
+      </p>
+      <p>Arba galite tai padaryti administratoriaus skydelyje.</p>
+    `;
+
+    return sendEmail({
+      to: adminEmail,
+      subject: `Naujas prizo išpirkimo prašymas - ${prizeName}`,
+      html,
+    });
+  } catch (error: any) {
+    console.error('Failed to send prize redemption email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Nepavyko išsiųsti el. laiško' 
+    };
+  }
+};
+
+export const sendNewUserRegistrationEmail = async (adminEmail: string, userName: string) => {
+  try {
+    // Get admin user to check notification settings
+    const { data: adminData, error: adminError } = await supabase
+      .from('users')
+      .select('user_metadata')
+      .eq('email', adminEmail)
+      .single();
+
+    if (adminError) throw adminError;
+
+    // Check if new user registration notifications are enabled
+    const settings = adminData?.user_metadata?.notificationSettings;
+    if (!settings?.newUserRegistrations) {
+      console.log('New user registration notifications are disabled for this admin');
+      return { success: true };
+    }
+
+    const html = `
+      <h2>Naujas naudotojas užsiregistravo</h2>
+      <p>Naudotojas ${userName} ką tik užsiregistravo sistemoje.</p>
+      <p>Galite peržiūrėti naujo naudotojo informaciją administratoriaus skydelyje.</p>
+    `;
+
+    return sendEmail({
+      to: adminEmail,
+      subject: 'Naujas naudotojas užsiregistravo',
+      html,
+    });
+  } catch (error: any) {
+    console.error('Failed to send new user registration email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Nepavyko išsiųsti el. laiško' 
+    };
+  }
+};
+
+export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: string) => {
+  try {
+    // Get admin user to check notification settings
+    const { data: adminData, error: adminError } = await supabase
+      .from('users')
+      .select('user_metadata')
+      .eq('email', adminEmail)
+      .single();
+
+    if (adminError) throw adminError;
+
+    // Check if system update notifications are enabled
+    const settings = adminData?.user_metadata?.notificationSettings;
+    if (!settings?.systemUpdates) {
+      console.log('System update notifications are disabled for this admin');
+      return { success: true };
+    }
+
+    const html = `
+      <h2>Sistemos atnaujinimas</h2>
+      <p>${updateMessage}</p>
+      <p>Galite peržiūrėti detalesnę informaciją administratoriaus skydelyje.</p>
+    `;
+
+    return sendEmail({
+      to: adminEmail,
+      subject: 'Sistemos atnaujinimas',
+      html,
+    });
+  } catch (error: any) {
+    console.error('Failed to send system update email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Nepavyko išsiųsti el. laiško' 
+    };
+  }
+};
+
+export const testEmailSending = async (email: string) => {
+  try {
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: email,
+        subject: 'Testinis el. laiškas',
+        html: `
+          <h1>Testinis el. laiškas</h1>
+          <p>Šis yra testinis el. laiškas, skirtas patikrinti el. pašto siuntimo funkcionalumą.</p>
+          <p>Jei gavote šį laišką, tai reiškia, kad el. pašto siuntimas veikia tinkamai.</p>
+        `,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Nepavyko išsiųsti el. laiško');
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error sending test email:', error);
+    return { error: error.message || 'Nepavyko išsiųsti el. laiško' };
+  }
 }; 

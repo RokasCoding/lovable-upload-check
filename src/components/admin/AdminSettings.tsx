@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Settings, Bell } from 'lucide-react';
+import { testEmailSending } from '@/lib/email';
 
 interface NotificationSettings {
   prizeRedemptions: boolean;
@@ -21,6 +22,7 @@ export const AdminSettings: React.FC = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
     prizeRedemptions: true,
     newUserRegistrations: true,
@@ -84,6 +86,32 @@ export const AdminSettings: React.FC = () => {
     }
   };
 
+  const handleTestEmail = async () => {
+    if (!user?.email) return;
+    
+    setIsTesting(true);
+    try {
+      const result = await testEmailSending(user.email);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      toast({
+        title: 'Testinis el. laiškas išsiųstas',
+        description: 'Patikrinkite savo el. paštą',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Klaida',
+        description: error.message || 'Nepavyko išsiųsti testinio el. laiško',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="bg-white border-gray-200 animate-fade-in">
@@ -118,9 +146,19 @@ export const AdminSettings: React.FC = () => {
       <CardContent className="space-y-6">
         {/* Email Notifications Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-black" />
-            <h3 className="text-lg font-semibold text-black">El. pašto pranešimai</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-black" />
+              <h3 className="text-lg font-semibold text-black">El. pašto pranešimai</h3>
+            </div>
+            <Button
+              onClick={handleTestEmail}
+              disabled={isTesting}
+              variant="outline"
+              className="text-sm"
+            >
+              {isTesting ? 'Siunčiama...' : 'Išbandyti el. paštą'}
+            </Button>
           </div>
           <p className="text-sm text-gray-600">
             Pasirinkite, apie kokius įvykius norite gauti el. pašto pranešimus
