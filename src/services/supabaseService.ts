@@ -17,6 +17,7 @@ export const getUsers = async (): Promise<User[]> => {
     role: profile.role,
     totalPoints: profile.total_points,
     isVerified: profile.is_verified,
+    createdAt: profile.created_at,
   }));
 };
 
@@ -36,6 +37,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
     role: data.role,
     totalPoints: data.total_points,
     isVerified: data.is_verified,
+    createdAt: data.created_at,
   };
 };
 
@@ -55,6 +57,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     role: data.role,
     totalPoints: data.total_points,
     isVerified: data.is_verified,
+    createdAt: data.created_at,
   };
 };
 

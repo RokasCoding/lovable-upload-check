@@ -41,6 +41,7 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   const totalPoints = currentUser?.totalPoints || 0;
+  const earnedPoints = bonusEntries.reduce((sum, entry) => sum + entry.pointsAwarded, 0);
 
   return (
     <Layout>
@@ -49,7 +50,7 @@ const Dashboard: React.FC = () => {
           {/* Points summary card */}
           <Card className="flex-1 bg-background border-border animate-fade-in">
             <CardHeader>
-              <CardTitle className="text-foreground">Sveiki, {user?.user_metadata.name || 'Naudotojau'}!</CardTitle>
+              <CardTitle className="text-foreground">Sveiki, {currentUser?.name || user?.user_metadata.name || 'Naudotojau'}!</CardTitle>
               <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
             </CardHeader>
             <CardContent>
@@ -58,7 +59,7 @@ const Dashboard: React.FC = () => {
                   {isLoadingUser ? (
                     <Skeleton className="h-12 w-24 bg-muted" />
                   ) : (
-                    totalPoints
+                    <span className="point-badge text-4xl">{totalPoints}</span>
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
@@ -80,7 +81,7 @@ const Dashboard: React.FC = () => {
                   {isLoading ? (
                     <Skeleton className="h-5 w-16 inline-block bg-muted" />
                   ) : (
-                    bonusEntries.reduce((sum, entry) => sum + entry.pointsAwarded, 0)
+                    earnedPoints
                   )}
                 </span>{" "}
                 uždirbti taškai

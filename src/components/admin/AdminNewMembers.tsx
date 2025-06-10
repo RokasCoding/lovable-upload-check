@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { User } from '@/types';
 
 interface AdminNewMembersProps {
@@ -17,9 +17,9 @@ export const AdminNewMembers: React.FC<AdminNewMembersProps> = ({
 }) => {
   // Filter new members (registered in last 7 days)
   const newMembers = users.filter(user => {
-    const registrationDate = new Date(user.createdAt || Date.now());
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    if (!user.createdAt) return false;
+    const registrationDate = new Date(user.createdAt);
+    const weekAgo = subDays(new Date(), 7);
     return registrationDate > weekAgo;
   });
 
@@ -65,10 +65,10 @@ export const AdminNewMembers: React.FC<AdminNewMembersProps> = ({
                       {user.email}
                     </TableCell>
                     <TableCell className="text-black">
-                      {format(new Date(user.createdAt || Date.now()), 'yyyy-MM-dd')}
+                      {user.createdAt ? format(new Date(user.createdAt), 'yyyy-MM-dd') : '-'}
                     </TableCell>
                     <TableCell>
-                      <span className="point-badge">{user.totalPoints}</span>
+                      <span className="point-badge">{user.totalPoints || 0}</span>
                     </TableCell>
                     <TableCell className="text-black">
                       {user.role === 'admin' ? 'Administratorius' : 'Naudotojas'}

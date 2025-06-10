@@ -913,17 +913,24 @@ const Admin: React.FC = () => {
 
       {/* Delete User Confirmation Dialog */}
       <Dialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white text-black border-gray-300">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Ištrinti Naudotoją</DialogTitle>
+            <DialogTitle>Ištrinti Naudotoją</DialogTitle>
+            <DialogDescription>
+              Ar tikrai norite ištrinti naudotoją {selectedUserForDeletion?.name}? Šis veiksmas negali būti atšauktas.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-foreground">
-              Ar tikrai norite ištrinti naudotoją <strong>{selectedUserForDeletion?.name}</strong>?
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Šis veiksmas negrįžtamas. Naudotojo paskyra, visi jo taškai ir istorija bus visam laikui pašalinti.
-            </p>
+            {selectedUserForDeletion && (
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                <h4 className="font-medium text-red-900 mb-1">Naudotojo informacija:</h4>
+                <p className="text-red-800 font-semibold">{selectedUserForDeletion.name}</p>
+                <p className="text-sm text-red-600">{selectedUserForDeletion.email}</p>
+                <p className="text-sm text-red-600">
+                  Dabartiniai taškai: {selectedUserForDeletion.totalPoints || 0}
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -938,7 +945,7 @@ const Admin: React.FC = () => {
               onClick={confirmDeleteUser}
               disabled={isProcessing}
             >
-              {isProcessing ? 'Trinamas...' : 'Ištrinti'}
+              {isProcessing ? 'Trinama...' : 'Ištrinti'}
             </Button>
           </DialogFooter>
         </DialogContent>
