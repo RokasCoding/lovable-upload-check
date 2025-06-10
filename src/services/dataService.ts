@@ -1,6 +1,6 @@
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import * as supabaseService from './supabaseService';
-import { sendInviteEmail } from '@/lib/email';
+import { sendInviteEmail, sendPrizeRedemptionEmail } from '@/lib/email';
 
 // Helper function to simulate API call delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -84,7 +84,7 @@ export const getAllPrizes = async (): Promise<Prize[]> => {
   return supabaseService.getAllPrizes();
 };
 
-export const createPrize = async (prize: Omit<Prize, 'id'>): Promise<Prize> => {
+export const createPrize = async (prize: Omit<Prize, 'id' | 'createdAt' | 'updatedAt'>): Promise<Prize> => {
   return supabaseService.createPrize(prize);
 };
 
@@ -92,13 +92,44 @@ export const updatePrize = async (prize: Prize): Promise<Prize> => {
   return supabaseService.updatePrize(prize);
 };
 
+export const getPrizeById = async (id: string): Promise<Prize | null> => {
+  return supabaseService.getPrizeById(id);
+};
+
 // Redemption related functions
 export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]> => {
   return supabaseService.getRedemptions(userId);
 };
 
-export const createRedemption = async (redemption: Omit<PrizeRedemption, 'id' | 'status' | 'requestedAt' | 'updatedAt' | 'comment'>): Promise<PrizeRedemption> => {
-  return supabaseService.createRedemption(redemption);
+export const createRedemption = async (userId: string, prizeId: string): Promise<PrizeRedemption> => {
+  const user = await getUserById(userId);
+  const prize = await getPrizeById(prizeId);
+
+  if (!user || !prize) {
+    throw new Error('User or prize not found');
+  }
+
+  if (user.totalPoints < prize.points) {
+    throw new Error('Not enough points');
+  }
+
+  const redemption = await supabaseService.createRedemption({
+    userId,
+    userName: user.name,
+    prizeId,
+    prizeName: prize.name,
+    pointCost: prize.points,
+  });
+
+  // Send email to admin
+  await sendPrizeRedemptionEmail(
+    'akvile.n@vilniuscoding.lt',
+    user.name,
+    prize.name,
+    redemption.id
+  );
+
+  return redemption;
 };
 
 export const processRedemption = async (id: string, status: 'approved' | 'rejected', comment?: string): Promise<PrizeRedemption> => {

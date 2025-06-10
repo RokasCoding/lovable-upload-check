@@ -15,6 +15,7 @@ import Rules from "./pages/Rules";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import ResetPassword from '@/pages/ResetPassword';
+import Register from '@/pages/Register';
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => {
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/register" element={<Register />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>

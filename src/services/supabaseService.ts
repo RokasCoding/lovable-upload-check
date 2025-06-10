@@ -158,8 +158,8 @@ export const getPrizes = async (): Promise<Prize[]> => {
   const { data, error } = await supabase
     .from('prizes')
     .select('*')
-    .eq('active', true)
-    .order('point_cost');
+    .eq('is_active', true)
+    .order('points');
     
   if (error) throw error;
   
@@ -167,9 +167,11 @@ export const getPrizes = async (): Promise<Prize[]> => {
     id: prize.id,
     name: prize.name,
     description: prize.description,
-    pointCost: prize.point_cost,
-    imageUrl: prize.image_url || undefined,
-    active: prize.active,
+    points: prize.points,
+    imageUrl: prize.image_url || '',
+    isActive: prize.is_active,
+    createdAt: prize.created_at,
+    updatedAt: prize.updated_at,
   }));
 };
 
@@ -177,7 +179,7 @@ export const getAllPrizes = async (): Promise<Prize[]> => {
   const { data, error } = await supabase
     .from('prizes')
     .select('*')
-    .order('point_cost');
+    .order('points');
     
   if (error) throw error;
   
@@ -185,21 +187,23 @@ export const getAllPrizes = async (): Promise<Prize[]> => {
     id: prize.id,
     name: prize.name,
     description: prize.description,
-    pointCost: prize.point_cost,
-    imageUrl: prize.image_url || undefined,
-    active: prize.active,
+    points: prize.points,
+    imageUrl: prize.image_url || '',
+    isActive: prize.is_active,
+    createdAt: prize.created_at,
+    updatedAt: prize.updated_at,
   }));
 };
 
-export const createPrize = async (prize: Omit<Prize, 'id'>): Promise<Prize> => {
+export const createPrize = async (prize: Omit<Prize, 'id' | 'createdAt' | 'updatedAt'>): Promise<Prize> => {
   const { data, error } = await supabase
     .from('prizes')
     .insert([{
       name: prize.name,
       description: prize.description,
-      point_cost: prize.pointCost,
+      points: prize.points,
       image_url: prize.imageUrl,
-      active: prize.active,
+      is_active: prize.isActive,
     }])
     .select()
     .single();
@@ -210,9 +214,11 @@ export const createPrize = async (prize: Omit<Prize, 'id'>): Promise<Prize> => {
     id: data.id,
     name: data.name,
     description: data.description,
-    pointCost: data.point_cost,
-    imageUrl: data.image_url || undefined,
-    active: data.active,
+    points: data.points,
+    imageUrl: data.image_url || '',
+    isActive: data.is_active,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
   };
 };
 
@@ -222,9 +228,9 @@ export const updatePrize = async (prize: Prize): Promise<Prize> => {
     .update({
       name: prize.name,
       description: prize.description,
-      point_cost: prize.pointCost,
+      points: prize.points,
       image_url: prize.imageUrl,
-      active: prize.active,
+      is_active: prize.isActive,
     })
     .eq('id', prize.id)
     .select()
@@ -236,16 +242,42 @@ export const updatePrize = async (prize: Prize): Promise<Prize> => {
     id: data.id,
     name: data.name,
     description: data.description,
-    pointCost: data.point_cost,
-    imageUrl: data.image_url || undefined,
-    active: data.active,
+    points: data.points,
+    imageUrl: data.image_url || '',
+    isActive: data.is_active,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+};
+
+export const getPrizeById = async (id: string): Promise<Prize | null> => {
+  const { data, error } = await supabase
+    .from('prizes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching prize:', error);
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    points: data.points,
+    imageUrl: data.image_url || '',
+    isActive: data.is_active,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
   };
 };
 
 // Redemption related functions
 export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]> => {
   let query = supabase
-    .from('redemptions')
+    .from('prize_redemptions')
     .select('*')
     .order('requested_at', { ascending: false });
     
@@ -272,8 +304,8 @@ export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]
 
 export const createRedemption = async (redemption: Omit<PrizeRedemption, 'id' | 'status' | 'requestedAt' | 'updatedAt' | 'comment'>): Promise<PrizeRedemption> => {
   const { data, error } = await supabase
-    .from('redemptions')
-    .insert([{
+    .from('prize_redemptions')
+    .insert({
       user_id: redemption.userId,
       user_name: redemption.userName,
       prize_id: redemption.prizeId,
@@ -281,12 +313,15 @@ export const createRedemption = async (redemption: Omit<PrizeRedemption, 'id' | 
       point_cost: redemption.pointCost,
       status: 'pending',
       requested_at: new Date().toISOString(),
-    }])
+    })
     .select()
     .single();
-    
-  if (error) throw error;
-  
+
+  if (error) {
+    console.error('Error creating redemption:', error);
+    throw error;
+  }
+
   return {
     id: data.id,
     userId: data.user_id,
@@ -303,7 +338,7 @@ export const createRedemption = async (redemption: Omit<PrizeRedemption, 'id' | 
 
 export const processRedemption = async (id: string, status: 'approved' | 'rejected', comment?: string): Promise<PrizeRedemption> => {
   const { data, error } = await supabase
-    .from('redemptions')
+    .from('prize_redemptions')
     .update({
       status,
       comment,
@@ -331,7 +366,7 @@ export const processRedemption = async (id: string, status: 'approved' | 'reject
 
 // Stats related functions
 export const getStats = async (): Promise<Stats> => {
-  const [usersResult, entriesResult, redemptionsResult] = await Promise.all([
+  const [usersResult, entriesResult, prizesResult, redemptionsResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, name, total_points')
@@ -340,25 +375,28 @@ export const getStats = async (): Promise<Stats> => {
       .from('bonus_entries')
       .select('points_awarded'),
     supabase
-      .from('redemptions')
+      .from('prizes')
+      .select('id'),
+    supabase
+      .from('prize_redemptions')
       .select('prize_id, prize_name, point_cost, status'),
   ]);
 
   if (usersResult.error) throw usersResult.error;
   if (entriesResult.error) throw entriesResult.error;
+  if (prizesResult.error) throw prizesResult.error;
   if (redemptionsResult.error) throw redemptionsResult.error;
 
   const totalUsers = usersResult.data.length;
-  const totalPointsAwarded = entriesResult.data.reduce((sum, entry) => sum + entry.points_awarded, 0);
-  const totalPointsRedeemed = redemptionsResult.data
-    .filter(r => r.status === 'approved')
-    .reduce((sum, r) => sum + r.point_cost, 0);
+  const totalPoints = entriesResult.data.reduce((sum, entry) => sum + entry.points_awarded, 0);
+  const totalPrizes = prizesResult.data.length;
+  const totalRedemptions = redemptionsResult.data.filter(r => r.status === 'approved').length;
+  const averagePoints = totalUsers > 0 ? Math.round(totalPoints / totalUsers) : 0;
 
   const topUsers = usersResult.data
     .sort((a, b) => b.total_points - a.total_points)
     .slice(0, 5)
     .map(user => ({
-      userId: user.id,
       name: user.name,
       points: user.total_points,
     }));
@@ -375,14 +413,16 @@ export const getStats = async (): Promise<Stats> => {
     });
 
   const popularPrizes = Object.entries(prizeOccurrences)
-    .map(([prizeId, { count, name }]) => ({ prizeId, name, count }))
+    .map(([_, { count, name }]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
   return {
     totalUsers,
-    totalPointsAwarded,
-    totalPointsRedeemed,
+    totalPoints,
+    totalPrizes,
+    totalRedemptions,
+    averagePoints,
     topUsers,
     popularPrizes,
   };

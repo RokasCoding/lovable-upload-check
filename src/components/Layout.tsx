@@ -75,8 +75,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-primary">
+                    <div className="flex h-full w-full items-center justify-center rounded-full text-primary-foreground">
                       {user.user_metadata.name?.charAt(0) || user.email?.charAt(0)}
                     </div>
                   </Button>

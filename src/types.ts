@@ -18,16 +18,18 @@ export interface BonusEntry {
   courseName: string;
   price: number;
   pointsAwarded: number;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface Prize {
   id: string;
   name: string;
   description: string;
-  pointCost: number;
-  imageUrl?: string;
-  active: boolean;
+  points: number;
+  imageUrl: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface PrizeRedemption {
@@ -39,14 +41,22 @@ export interface PrizeRedemption {
   pointCost: number;
   status: 'pending' | 'approved' | 'rejected';
   comment?: string;
-  requestedAt: Date;
-  updatedAt?: Date;
+  requestedAt: string;
+  updatedAt?: string;
 }
 
 export interface Stats {
   totalUsers: number;
-  totalPointsAwarded: number;
-  totalPointsRedeemed: number;
-  topUsers: {userId: string, name: string, points: number}[];
-  popularPrizes: {prizeId: string, name: string, count: number}[];
+  totalPoints: number;
+  totalPrizes: number;
+  totalRedemptions: number;
+  averagePoints: number;
+  topUsers: {
+    name: string;
+    points: number;
+  }[];
+  popularPrizes: {
+    name: string;
+    count: number;
+  }[];
 }

@@ -29,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableCell, TableRow, TableHead } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 
 // Import the new components
 import { AdminStats } from '@/components/admin/AdminStats';
@@ -37,6 +41,16 @@ import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminPrizes } from '@/components/admin/AdminPrizes';
 import { AdminRedemptions } from '@/components/admin/AdminRedemptions';
 import { AdminDialogs } from '@/components/admin/AdminDialogs';
+
+interface RegistrationLink {
+  id: string;
+  created_at: string;
+  created_by: string;
+  link_token: string;
+  is_active: boolean;
+  used_at: string | null;
+  used_by: string | null;
+}
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
@@ -49,6 +63,8 @@ const Admin: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [redemptions, setRedemptions] = useState<PrizeRedemption[]>([]);
+  const [registrationLinks, setRegistrationLinks] = useState<RegistrationLink[]>([]);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Dialog states
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -124,6 +140,28 @@ const Admin: React.FC = () => {
     fetchData();
   }, [isAdmin, navigate]);
 
+  useEffect(() => {
+    const fetchRegistrationLinks = async () => {
+      const { data, error } = await supabase
+        .from('registration_links')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: 'Klaida',
+          description: 'Nepavyko gauti registracijos nuorodų',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setRegistrationLinks(data);
+    };
+
+    fetchRegistrationLinks();
+  }, [toast]);
+
   const handleInviteUser = async () => {
     if (!inviteName || !inviteEmail) {
       toast({
@@ -160,55 +198,41 @@ const Admin: React.FC = () => {
   };
 
   const handleCreatePrize = async () => {
-    if (!prizeName || !prizeDescription || !prizePoints) {
-      toast({
-        title: "Klaida",
-        description: "Prašome užpildyti visus privalomus laukus",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const points = parseInt(prizePoints);
-    if (isNaN(points) || points <= 0) {
-      toast({
-        title: "Klaida",
-        description: "Taškai turi būti teigiamas skaičius",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsProcessing(true);
     try {
+      const points = parseInt(prizePoints);
+      if (isNaN(points) || points <= 0) {
+        throw new Error('Taškų kaina turi būti teigiamas skaičius');
+      }
+      
       await createPrize({
         name: prizeName,
         description: prizeDescription,
-        pointCost: points,
-        imageUrl: prizeImage || undefined,
-        active: true,
+        points: points,
+        imageUrl: prizeImage,
+        isActive: true,
       });
       
       toast({
-        title: "Sėkmė",
-        description: "Prizas sėkmingai sukurtas",
+        title: 'Prizas sukurtas',
+        description: `Prizas "${prizeName}" sėkmingai sukurtas`,
       });
       
-      // Refresh prizes list
-      const updatedPrizes = await getPrizes();
-      setPrizes(updatedPrizes);
-      
-      setNewPrizeDialogOpen(false);
+      // Reset form and close dialog
       setPrizeName('');
       setPrizeDescription('');
       setPrizePoints('');
       setPrizeImage('');
-    } catch (error) {
-      console.error('Nepavyko sukurti prizo:', error);
+      setNewPrizeDialogOpen(false);
+      
+      // Refresh prizes list
+      const refreshedPrizes = await getPrizes();
+      setPrizes(refreshedPrizes);
+    } catch (error: any) {
       toast({
-        title: "Klaida",
-        description: "Nepavyko sukurti prizo",
-        variant: "destructive",
+        title: 'Klaida',
+        description: error.message || 'Nepavyko sukurti prizo',
+        variant: 'destructive',
       });
     } finally {
       setIsProcessing(false);
@@ -291,32 +315,37 @@ const Admin: React.FC = () => {
         action === 'rejected' ? rejectionComment : undefined
       );
       
+      // Update user points if approved
+      if (action === 'approved') {
+        const user = users.find(u => u.id === selectedRedemption.userId);
+        if (user) {
+          await deductPoints(
+            selectedRedemption.userId, 
+            selectedRedemption.pointCost, 
+            `Iškeistas prizas: ${selectedRedemption.prizeName}`
+          );
+        }
+      }
+      
       toast({
-        title: "Sėkmė",
-        description: `Iškeitimas sėkmingai ${action === 'approved' ? 'patvirtintas' : 'atmestas'}`,
+        title: action === 'approved' ? 'Prašymas patvirtintas' : 'Prašymas atmestas',
+        description: action === 'approved' 
+          ? `Prizo "${selectedRedemption.prizeName}" iškeitimas patvirtintas` 
+          : `Prizo "${selectedRedemption.prizeName}" iškeitimas atmestas`,
       });
       
       // Refresh redemptions list
       const updatedRedemptions = await getRedemptions();
       setRedemptions(updatedRedemptions);
       
-      // Refresh users list for updated points
-      const updatedUsers = await getUsers();
-      setUsers(updatedUsers);
-      
-      // Refresh stats
-      const updatedStats = await getStats();
-      setStats(updatedStats);
-      
+      // Close dialog
       setRedemptionDialogOpen(false);
-      setSelectedRedemption(null);
       setRejectionComment('');
-    } catch (error) {
-      console.error(`Nepavyko ${action} iškeitimo:`, error);
+    } catch (error: any) {
       toast({
-        title: "Klaida",
-        description: `Nepavyko ${action} iškeitimo`,
-        variant: "destructive",
+        title: 'Klaida',
+        description: error.message || 'Nepavyko apdoroti prašymo',
+        variant: 'destructive',
       });
     } finally {
       setIsProcessing(false);
@@ -337,38 +366,66 @@ const Admin: React.FC = () => {
     }
   };
 
-  const generateRegistrationLink = () => {
-    const baseUrl = window.location.origin;
-    const points = linkType === 'with-points' ? parseInt(linkPoints) : 0;
-    const linkId = Math.random().toString(36).substring(2, 15);
-    
-    if (linkType === 'with-points' && (isNaN(points) || points <= 0)) {
+  const generateRegistrationLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      const { data, error } = await supabase
+        .from('registration_links')
+        .insert({
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRegistrationLinks(prev => [data, ...prev]);
+      
+      // Copy link to clipboard
+      const link = `${window.location.origin}/register?token=${data.link_token}`;
+      await navigator.clipboard.writeText(link);
+
       toast({
-        title: "Klaida",
-        description: "Prašome įvesti teisingą taškų skaičių",
-        variant: "destructive",
+        title: 'Nuoroda sugeneruota',
+        description: 'Registracijos nuoroda nukopijuota į iškarpinę',
       });
-      return;
+    } catch (error: any) {
+      toast({
+        title: 'Klaida',
+        description: error.message || 'Nepavyko sugeneruoti nuorodos',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingLink(false);
     }
-    
-    const link = `${baseUrl}/register?ref=${linkId}&points=${points}`;
-    setGeneratedLink(link);
-    
-    toast({
-      title: "Sėkmė",
-      description: "Registracijos nuoroda sugeneruota",
-    });
   };
 
-  const copyLinkToClipboard = () => {
-    navigator.clipboard.writeText(generatedLink);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
-    
-    toast({
-      title: "Nukopijuota",
-      description: "Nuoroda nukopijuota į iškarpinę",
-    });
+  const deactivateRegistrationLink = async (linkId: string) => {
+    try {
+      const { error } = await supabase
+        .from('registration_links')
+        .update({ is_active: false })
+        .eq('id', linkId);
+
+      if (error) throw error;
+
+      setRegistrationLinks(prev =>
+        prev.map(link =>
+          link.id === linkId ? { ...link, is_active: false } : link
+        )
+      );
+
+      toast({
+        title: 'Nuoroda deaktyvuota',
+        description: 'Registracijos nuoroda sėkmingai deaktyvuota',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Klaida',
+        description: error.message || 'Nepavyko deaktyvuoti nuorodos',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAssignPrize = async (userId: string, prizeId: string) => {
@@ -493,6 +550,7 @@ const Admin: React.FC = () => {
             <TabsTrigger value="users">Naudotojai</TabsTrigger>
             <TabsTrigger value="prizes">Prizai</TabsTrigger>
             <TabsTrigger value="redemptions">Iškeičiami Prizai</TabsTrigger>
+            <TabsTrigger value="registration-links">Registracijos nuorodos</TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard">
@@ -539,6 +597,82 @@ const Admin: React.FC = () => {
               onViewRedemption={handleViewRedemption}
               onRedemptionAction={handleRedemptionQuickAction}
             />
+          </TabsContent>
+          
+          <TabsContent value="registration-links">
+            <Card>
+              <CardHeader>
+                <CardTitle>Registracijos nuorodos</CardTitle>
+                <CardDescription>
+                  Valdykite registracijos nuorodas naujiems naudotojams
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sukurta</TableHead>
+                          <TableHead>Nuoroda</TableHead>
+                          <TableHead>Būsena</TableHead>
+                          <TableHead>Panaudota</TableHead>
+                          <TableHead>Veiksmai</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {registrationLinks.map((link) => (
+                          <TableRow key={link.id}>
+                            <TableCell>
+                              {new Date(link.created_at).toLocaleString('lt-LT')}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                className="h-auto p-0 font-mono"
+                                onClick={() => {
+                                  const url = `${window.location.origin}/register?token=${link.link_token}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast({
+                                    title: 'Nukopijuota',
+                                    description: 'Nuoroda nukopijuota į iškarpinę',
+                                  });
+                                }}
+                              >
+                                {link.link_token}
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={link.is_active ? 'default' : 'secondary'}>
+                                {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {link.used_at ? (
+                                new Date(link.used_at).toLocaleString('lt-LT')
+                              ) : (
+                                'Nepanaudota'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {link.is_active && !link.used_at && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deactivateRegistrationLink(link.id)}
+                                >
+                                  Deaktyvuoti
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -595,7 +729,7 @@ const Admin: React.FC = () => {
         generatedLink={generatedLink}
         linkCopied={linkCopied}
         onGenerateLink={generateRegistrationLink}
-        onCopyLink={copyLinkToClipboard}
+        onCopyLink={() => {}}
 
         isProcessing={isProcessing}
       />

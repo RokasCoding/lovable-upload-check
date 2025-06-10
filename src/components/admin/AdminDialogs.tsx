@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -201,20 +200,20 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
       <Dialog open={newPrizeDialogOpen} onOpenChange={setNewPrizeDialogOpen}>
         <DialogContent className="bg-white text-black border-gray-300">
           <DialogHeader>
-            <DialogTitle>Pridėti Naują Prizą</DialogTitle>
+            <DialogTitle>Pridėti naują prizą</DialogTitle>
             <DialogDescription>
-              Sukurkite naują prizą, kurį naudotojai galės iškeisti savo taškams.
+              Įveskite naujo prizo informaciją
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="prize-name">Prizo Pavadinimas</Label>
+              <Label htmlFor="prize-name">Pavadinimas</Label>
               <Input
                 id="prize-name"
                 value={prizeName}
                 onChange={(e) => setPrizeName(e.target.value)}
-                placeholder="VCS Marškinėliai"
+                placeholder="Prizo pavadinimas"
                 className="bg-gray-50 text-black border-gray-300"
               />
             </div>
@@ -225,14 +224,13 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
                 id="prize-description"
                 value={prizeDescription}
                 onChange={(e) => setPrizeDescription(e.target.value)}
-                placeholder="Aukštos kokybės medvilniniai marškinėliai su VCS logotipu"
+                placeholder="Prizo aprašymas"
                 className="bg-gray-50 text-black border-gray-300"
-                rows={3}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="prize-points">Taškų Kaina</Label>
+              <Label htmlFor="prize-points">Taškų kaina</Label>
               <Input
                 id="prize-points"
                 type="number"
@@ -244,31 +242,32 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="prize-image">Paveikslėlio URL (neprivaloma)</Label>
+              <Label htmlFor="prize-image">Nuotraukos URL</Label>
               <Input
                 id="prize-image"
+                type="url"
                 value={prizeImage}
                 onChange={(e) => setPrizeImage(e.target.value)}
-                placeholder="https://pavyzdys.lt/image.png"
+                placeholder="https://example.com/image.jpg"
                 className="bg-gray-50 text-black border-gray-300"
               />
             </div>
           </div>
           
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => setNewPrizeDialogOpen(false)}
-              className="border-gray-300 text-black hover:bg-gray-100"
             >
               Atšaukti
             </Button>
-            <Button 
-              onClick={onCreatePrize} 
-              className="bg-vcs-blue hover:bg-vcs-blue/90"
-              disabled={isProcessing}
+            <Button
+              type="button"
+              onClick={onCreatePrize}
+              disabled={!prizeName || !prizeDescription || !prizePoints || !prizeImage}
             >
-              {isProcessing ? 'Kuriama...' : 'Sukurti Prizą'}
+              Pridėti prizą
             </Button>
           </DialogFooter>
         </DialogContent>

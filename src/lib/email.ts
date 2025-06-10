@@ -98,4 +98,51 @@ export const sendPointsDeductionEmail = async (
       error: error.message || 'Nepavyko išsiųsti pranešimo' 
     };
   }
+};
+
+interface EmailData {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+export const sendEmail = async (data: EmailData) => {
+  try {
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: data,
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error: any) {
+    console.error('Email sending error:', error);
+    return { error: error.message || 'Failed to send email' };
+  }
+};
+
+export const sendPrizeRedemptionEmail = async (
+  adminEmail: string,
+  userName: string,
+  prizeName: string,
+  redemptionId: string
+) => {
+  const confirmUrl = `${window.location.origin}/admin?tab=redemptions&confirm=${redemptionId}`;
+  const rejectUrl = `${window.location.origin}/admin?tab=redemptions&reject=${redemptionId}`;
+
+  const html = `
+    <h2>Naujas prizo išpirkimo prašymas</h2>
+    <p>Naudotojas ${userName} nori išpirkti prizą "${prizeName}".</p>
+    <p>Norėdami patvirtinti arba atmesti prašymą, spauskite vieną iš šių nuorodų:</p>
+    <p>
+      <a href="${confirmUrl}" style="display: inline-block; padding: 10px 20px; margin-right: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Patvirtinti</a>
+      <a href="${rejectUrl}" style="display: inline-block; padding: 10px 20px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px;">Atmesti</a>
+    </p>
+    <p>Arba galite tai padaryti administratoriaus skydelyje.</p>
+  `;
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `Naujas prizo išpirkimo prašymas - ${prizeName}`,
+    html,
+  });
 }; 

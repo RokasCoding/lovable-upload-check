@@ -37,10 +37,10 @@ const Prizes: React.FC = () => {
   const handlePrizeSelect = (prize: Prize) => {
     if (!user) return;
     
-    if ((user.user_metadata.totalPoints || 0) < prize.pointCost) {
+    if ((user.user_metadata.totalPoints || 0) < prize.points) {
       toast({
         title: "Nepakankamai taškų",
-        description: `Jums reikia dar ${prize.pointCost - (user.user_metadata.totalPoints || 0)} taškų, kad galėtumėte iškeisti šį prizą.`,
+        description: `Jums reikia dar ${prize.points - (user.user_metadata.totalPoints || 0)} taškų, kad galėtumėte iškeisti šį prizą.`,
         variant: "destructive",
       });
       return;
@@ -55,13 +55,7 @@ const Prizes: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      await createRedemption({
-        userId: user.id,
-        userName: user.user_metadata.name,
-        prizeId: selectedPrize.id,
-        prizeName: selectedPrize.name,
-        pointCost: selectedPrize.pointCost,
-      });
+      await createRedemption(user.id, selectedPrize.id);
       
       toast({
         title: "Prašymas išsiųstas",
@@ -115,7 +109,7 @@ const Prizes: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prizes.map((prize) => {
-              const canAfford = user?.user_metadata.totalPoints && user.user_metadata.totalPoints >= prize.pointCost;
+              const canAfford = user?.user_metadata.totalPoints && user.user_metadata.totalPoints >= prize.points;
               
               return (
                 <Card 
@@ -142,7 +136,7 @@ const Prizes: React.FC = () => {
                   <CardContent>
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-muted-foreground">Taškų kaina:</div>
-                      <div className="point-badge">{prize.pointCost} taškų</div>
+                      <div className="point-badge">{prize.points} taškų</div>
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -189,13 +183,13 @@ const Prizes: React.FC = () => {
                 
                 <div className="flex justify-between items-center pt-2 border-t border-border">
                   <span className="text-sm text-muted-foreground">Kaina:</span>
-                  <span className="point-badge">{selectedPrize.pointCost} taškų</span>
+                  <span className="point-badge">{selectedPrize.points} taškų</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Jūsų likutis po iškeitimo:</span>
                   <span className="font-medium text-primary">
-                    {user ? (user.user_metadata.totalPoints || 0) - selectedPrize.pointCost : 0} taškų
+                    {user ? (user.user_metadata.totalPoints || 0) - selectedPrize.points : 0} taškų
                   </span>
                 </div>
               </div>

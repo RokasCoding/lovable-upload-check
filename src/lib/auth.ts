@@ -4,6 +4,11 @@ import { useToast } from '@/hooks/use-toast';
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15; // minutes
 
+interface SignUpMetadata {
+  name: string;
+  linkToken?: string;
+}
+
 export const AuthService = {
   async signIn(email: string, password: string) {
     try {
@@ -25,8 +30,18 @@ export const AuthService = {
     }
   },
 
-  async signUp(email: string, password: string, metadata: { name: string }) {
+  async signUp(email: string, password: string, metadata: SignUpMetadata) {
     try {
+      // First validate the registration link if provided
+      if (metadata.linkToken) {
+        const { data: isValid, error: validationError } = await supabase
+          .rpc('validate_registration_link', { link_token: metadata.linkToken });
+
+        if (validationError || !isValid) {
+          throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
+        }
+      }
+
       if (!this.validatePassword(password)) {
         throw new Error('Password does not meet security requirements');
       }
@@ -36,20 +51,31 @@ export const AuthService = {
         password,
         options: {
           data: {
-            ...metadata,
-            role: 'user', // Default role
+            name: metadata.name,
+            role: 'user',
           },
         },
       });
 
       if (error) throw error;
 
+      // If registration is successful and we have a link token, mark it as used
+      if (metadata.linkToken) {
+        await supabase
+          .from('registration_links')
+          .update({ 
+            used_at: new Date().toISOString(),
+            used_by: data.user?.id
+          })
+          .eq('link_token', metadata.linkToken);
+      }
+
       return { data, error: null };
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('Registration error:', error);
       return {
         data: null,
-        error: error.message || 'An error occurred during signup'
+        error: error.message || 'An error occurred during registration'
       };
     }
   },
