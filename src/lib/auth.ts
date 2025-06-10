@@ -6,6 +6,7 @@ const LOCKOUT_DURATION = 15; // minutes
 
 interface SignUpMetadata {
   name: string;
+  phone?: string;
   linkToken?: string;
 }
 
@@ -52,6 +53,7 @@ export const AuthService = {
         options: {
           data: {
             name: metadata.name,
+            phone: metadata.phone,
             role: 'user',
           },
         },

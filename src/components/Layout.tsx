@@ -27,11 +27,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="bg-white py-4 px-6 shadow-md border-b-2 border-vcs-black">
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img 
-              src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
-              alt="Vilnius Coding School Logo" 
-              className="h-12 object-contain"
-            />
+            <div className="bg-black p-2 rounded">
+              <img 
+                src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
+                alt="Vilnius Coding School Logo" 
+                className="h-8 object-contain"
+              />
+            </div>
             <span className="hidden sm:inline-block text-xl font-semibold text-vcs-black ml-2">VCS Bonus Sistema</span>
           </Link>
 

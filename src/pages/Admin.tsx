@@ -42,6 +42,7 @@ import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminPrizes } from '@/components/admin/AdminPrizes';
 import { AdminRedemptions } from '@/components/admin/AdminRedemptions';
 import { AdminDialogs } from '@/components/admin/AdminDialogs';
+import { AdminSettings } from '@/components/admin/AdminSettings';
 
 interface RegistrationLink {
   id: string;
@@ -545,6 +546,7 @@ const Admin: React.FC = () => {
             <TabsTrigger value="prizes">Prizai</TabsTrigger>
             <TabsTrigger value="redemptions">Iškeičiami Prizai</TabsTrigger>
             <TabsTrigger value="registration-links">Registracijos nuorodos</TabsTrigger>
+            <TabsTrigger value="settings">Nustatymai</TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard">
@@ -581,6 +583,14 @@ const Admin: React.FC = () => {
               prizes={prizes} 
               isLoading={isLoading} 
               onCreatePrize={() => setNewPrizeDialogOpen(true)}
+              onRefreshPrizes={async () => {
+                try {
+                  const prizesData = await getPrizes();
+                  setPrizes(prizesData);
+                } catch (error) {
+                  console.error('Failed to refresh prizes:', error);
+                }
+              }}
             />
           </TabsContent>
           
@@ -667,6 +677,10 @@ const Admin: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings">
+            <AdminSettings />
           </TabsContent>
         </Tabs>
       </div>

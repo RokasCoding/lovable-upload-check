@@ -24,6 +24,7 @@ const Register: React.FC = () => {
   // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
@@ -91,6 +92,7 @@ const Register: React.FC = () => {
       const linkToken = searchParams.get('token');
       const { data, error } = await AuthService.signUp(email, password, { 
         name,
+        phone,
         linkToken,
       });
       
@@ -128,11 +130,13 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <img 
-            src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
-            alt="Vilnius Coding School Logo" 
-            className="h-16 object-contain mx-auto mb-4"
-          />
+          <div className="bg-black p-4 rounded-lg inline-block mb-4">
+            <img 
+              src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
+              alt="Vilnius Coding School Logo" 
+              className="h-16 object-contain"
+            />
+          </div>
           <h1 className="text-4xl font-bold text-foreground">Vilnius Coding School Bonus Sistema</h1>
           <p className="text-primary mt-2">Sukurkite savo paskyrą</p>
         </div>
@@ -165,6 +169,17 @@ const Register: React.FC = () => {
                   placeholder="jus@pvz.lt"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefono numeris</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+370 xxx xxxxx"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
