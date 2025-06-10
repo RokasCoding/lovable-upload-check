@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Users, Gift, Award } from 'lucide-react';
+import { Users, Gift, Award, TrendingUp } from 'lucide-react';
 import { Stats } from '@/types';
 
 interface AdminStatsProps {
@@ -27,7 +26,7 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <Card className="bg-white border-gray-200 animate-fade-in">
           <CardHeader className="pb-2">
             <CardTitle className="text-black text-lg flex items-center">
@@ -37,7 +36,7 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-vcs-blue">
-              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalUsers}
+              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalUsers || 0}
             </div>
             <p className="text-sm text-gray-600 mt-1">Registruotų naudotojų skaičius</p>
           </CardContent>
@@ -52,7 +51,7 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-vcs-blue">
-              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalPointsAwarded}
+              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalPoints || 0}
             </div>
             <p className="text-sm text-gray-600 mt-1">Iš viso suteiktų bonus taškų</p>
           </CardContent>
@@ -62,14 +61,29 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-black text-lg flex items-center">
               <Gift className="h-5 w-5 mr-2 text-vcs-blue" />
-              Iškeista Taškų
+              Iškeista Prizų
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-vcs-blue">
-              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalPointsRedeemed}
+              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.totalRedemptions || 0}
             </div>
-            <p className="text-sm text-gray-600 mt-1">Iš viso iškeistų taškų prizams</p>
+            <p className="text-sm text-gray-600 mt-1">Patvirtintų iškeičiamų prizų skaičius</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-gray-200 animate-fade-in">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-black text-lg flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-vcs-blue" />
+              Vidutiniai Taškai
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-vcs-blue">
+              {isLoading ? <Skeleton className="h-9 w-16 bg-gray-200" /> : stats?.averagePoints || 0}
+            </div>
+            <p className="text-sm text-gray-600 mt-1">Taškų vidurkis vienam naudotojui</p>
           </CardContent>
         </Card>
       </div>

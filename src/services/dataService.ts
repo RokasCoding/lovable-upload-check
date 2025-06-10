@@ -15,6 +15,18 @@ export const getUserById = async (id: string): Promise<User | null> => {
   return supabaseService.getUserById(id);
 };
 
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    // Delete user from Supabase Auth (this will also trigger profile deletion via trigger)
+    const { error } = await supabaseService.deleteUser(userId);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+    throw new Error('Nepavyko ištrinti naudotojo');
+  }
+};
+
 export const inviteUser = async (email: string, name: string, role: 'admin' | 'user'): Promise<boolean> => {
   try {
     // Check if user already exists in Supabase

@@ -372,8 +372,7 @@ export const getStats = async (): Promise<Stats> => {
   const [usersResult, entriesResult, prizesResult, redemptionsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, name, total_points')
-      .eq('role', 'user'),
+      .select('id, name, total_points'),
     supabase
       .from('bonus_entries')
       .select('points_awarded'),

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { User } from '@/types';
-import { PlusCircle, MinusCircle, History } from 'lucide-react';
+import { PlusCircle, MinusCircle, History, Trash2 } from 'lucide-react';
 
 interface AdminUsersProps {
   users: User[];
@@ -15,6 +15,7 @@ interface AdminUsersProps {
   onAddBonus: (userId: string) => void;
   onDeductPoints: (user: User) => void;
   onViewHistory: (user: User) => void;
+  onDeleteUser: (user: User) => void;
 }
 
 export const AdminUsers: React.FC<AdminUsersProps> = ({ 
@@ -23,7 +24,8 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
   onInviteUser, 
   onAddBonus,
   onDeductPoints,
-  onViewHistory
+  onViewHistory,
+  onDeleteUser
 }) => {
   return (
     <Card className="bg-background border-border animate-fade-in">
@@ -88,7 +90,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                       {format(new Date(user.createdAt || Date.now()), 'yyyy-MM-dd')}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button 
                           variant="outline"
                           size="sm"
@@ -116,6 +118,17 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                           <History className="w-4 h-4 mr-1" />
                           Istorija
                         </Button>
+                        {user.role !== 'admin' && (
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                            onClick={() => onDeleteUser(user)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Trinti
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

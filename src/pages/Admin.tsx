@@ -12,7 +12,8 @@ import {
   processRedemption,
   deductPoints,
   getUserPointHistory,
-  createRegistrationLink
+  createRegistrationLink,
+  deleteUser
 } from '@/services/dataService';
 import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -110,6 +111,10 @@ const Admin: React.FC = () => {
   const [pointHistoryDialogOpen, setPointHistoryDialogOpen] = useState(false);
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null);
   const [pointHistory, setPointHistory] = useState<BonusEntry[]>([]);
+
+  // New state variables for user deletion
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [selectedUserForDeletion, setSelectedUserForDeletion] = useState<User | null>(null);
 
   const isAdmin = user?.user_metadata.role === 'admin';
 
@@ -526,6 +531,45 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = (user: User) => {
+    setSelectedUserForDeletion(user);
+    setDeleteUserDialogOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUserForDeletion) return;
+    
+    setIsProcessing(true);
+    try {
+      await deleteUser(selectedUserForDeletion.id);
+      
+      toast({
+        title: "Sėkmė",
+        description: `Naudotojas ${selectedUserForDeletion.name} sėkmingai ištrintas`,
+      });
+      
+      // Refresh users list
+      const updatedUsers = await getUsers();
+      setUsers(updatedUsers);
+      
+      // Refresh stats
+      const updatedStats = await getStats();
+      setStats(updatedStats);
+      
+      setDeleteUserDialogOpen(false);
+      setSelectedUserForDeletion(null);
+    } catch (error) {
+      console.error('Nepavyko ištrinti naudotojo:', error);
+      toast({
+        title: "Klaida",
+        description: "Nepavyko ištrinti naudotojo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 bg-white min-h-screen">
@@ -595,6 +639,7 @@ const Admin: React.FC = () => {
                 setDeductPointsDialogOpen(true);
               }}
               onViewHistory={(user) => handleViewPointHistory(user)}
+              onDeleteUser={(user) => handleDeleteUser(user)}
             />
           </TabsContent>
           
@@ -854,6 +899,39 @@ const Admin: React.FC = () => {
               onClick={() => setPointHistoryDialogOpen(false)}
             >
               Uždaryti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Ištrinti Naudotoją</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-foreground">
+              Ar tikrai norite ištrinti naudotoją <strong>{selectedUserForDeletion?.name}</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Šis veiksmas negrįžtamas. Naudotojo paskyra, visi jo taškai ir istorija bus visam laikui pašalinti.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteUserDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              Atšaukti
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteUser}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Trinamas...' : 'Ištrinti'}
             </Button>
           </DialogFooter>
         </DialogContent>
