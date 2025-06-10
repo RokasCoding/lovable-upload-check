@@ -883,7 +883,7 @@ const Admin: React.FC = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Kursas</TableHead>
                     <TableHead className="text-right">Kurso kaina</TableHead>
-                    <TableHead className="text-right">Uždirbti taškai</TableHead>
+                    <TableHead className="text-right">Taškų pokytis</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

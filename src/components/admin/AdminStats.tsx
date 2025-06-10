@@ -130,7 +130,7 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value} iškeičimai`, 'Kiekis']} />
+                  <Tooltip formatter={(value) => [`${value} iškeitimai`, 'Kiekis']} />
                 </PieChart>
               </ResponsiveContainer>
             )}
