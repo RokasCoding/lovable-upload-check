@@ -178,123 +178,153 @@ export const AdminPrizes: React.FC<AdminPrizesProps> = ({
     }
   };
 
+  const activePrizes = prizes.filter(prize => prize.isActive);
+  const inactivePrizes = prizes.filter(prize => !prize.isActive);
+
+  const renderPrizeTable = (prizeList: Prize[], title: string, emptyMessage: string) => (
+    <Card className="bg-white border-gray-200 animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-black">{title}</CardTitle>
+        <CardDescription>
+          {title.includes('Aktyvūs') ? 'Šie prizai yra matomi naudotojams' : 'Šie prizai nematomi naudotojams'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {prizeList.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {emptyMessage}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="vcs-table">
+              <TableHeader>
+                <TableRow className="hover:bg-gray-50 border-black">
+                  <TableHead className="text-black font-bold">Prizas</TableHead>
+                  <TableHead className="text-black font-bold">Aprašymas</TableHead>
+                  <TableHead className="text-black font-bold">Būsena</TableHead>
+                  <TableHead className="text-black font-bold text-right">Taškų Kaina</TableHead>
+                  <TableHead className="text-black font-bold text-center">Veiksmai</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {prizeList.map((prize) => (
+                  <TableRow key={prize.id} className="hover:bg-gray-50 border-black">
+                    <TableCell className="font-medium text-black">
+                      <div className="flex items-center gap-2">
+                        {prize.imageUrl && (
+                          <img 
+                            src={prize.imageUrl} 
+                            alt={prize.name}
+                            className="h-8 w-8 object-cover rounded"
+                          />
+                        )}
+                        {prize.name}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-black max-w-xs">
+                      <div className="truncate" title={prize.description}>
+                        {prize.description}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={prize.isActive ? 'outline' : 'secondary'} className={
+                          prize.isActive 
+                            ? 'bg-green-100 text-green-800 border-green-300' 
+                            : 'bg-gray-100 text-gray-800 border-gray-300'
+                        }>
+                          {prize.isActive ? 'Aktyvus' : 'Neaktyvus'}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleActive(prize)}
+                          disabled={isProcessing}
+                          className="p-1"
+                        >
+                          {prize.isActive ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="point-badge">{prize.points}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewPrize(prize)}
+                          className="p-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditPrize(prize)}
+                          className="p-2"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePrize(prize)}
+                          className="p-2 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <>
-      <Card className="bg-white border-gray-200 animate-fade-in">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-black">Prizų Katalogas</CardTitle>
-            <CardDescription>Valdyti galimus prizus iškeitimui</CardDescription>
-          </div>
-          <Button 
-            onClick={onCreatePrize}
-            className="bg-vcs-blue hover:bg-vcs-blue/90"
-          >
-            Pridėti Naują Prizą
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full bg-gray-200" />
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table className="vcs-table">
-                <TableHeader>
-                  <TableRow className="hover:bg-gray-50 border-black">
-                    <TableHead className="text-black font-bold">Prizas</TableHead>
-                    <TableHead className="text-black font-bold">Aprašymas</TableHead>
-                    <TableHead className="text-black font-bold">Būsena</TableHead>
-                    <TableHead className="text-black font-bold text-right">Taškų Kaina</TableHead>
-                    <TableHead className="text-black font-bold text-center">Veiksmai</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {prizes.map((prize) => (
-                    <TableRow key={prize.id} className="hover:bg-gray-50 border-black">
-                      <TableCell className="font-medium text-black">
-                        <div className="flex items-center gap-2">
-                          {prize.imageUrl && (
-                            <img 
-                              src={prize.imageUrl} 
-                              alt={prize.name}
-                              className="h-8 w-8 object-cover rounded"
-                            />
-                          )}
-                          {prize.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-black max-w-xs">
-                        <div className="truncate" title={prize.description}>
-                          {prize.description}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                                                <Badge variant={prize.isActive ? 'outline' : 'secondary'} className={
-                        prize.isActive 
-                          ? 'bg-green-100 text-green-800 border-green-300' 
-                          : 'bg-gray-100 text-gray-800 border-gray-300'
-                      }>
-                        {prize.isActive ? 'Aktyvus' : 'Neaktyvus'}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleActive(prize)}
-                        disabled={isProcessing}
-                        className="p-1"
-                      >
-                        {prize.isActive ? (
-                          <ToggleRight className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="h-4 w-4 text-gray-400" />
-                        )}
-                      </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="point-badge">{prize.points}</span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewPrize(prize)}
-                            className="p-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPrize(prize)}
-                            className="p-2"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePrize(prize)}
-                            className="p-2 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Header with Add Prize Button */}
+      <div className="flex flex-row items-center justify-between mb-6 p-4 bg-white border border-gray-200 rounded-lg">
+        <div>
+          <h2 className="text-xl font-semibold text-black">Prizų Katalogas</h2>
+          <p className="text-gray-600">Valdyti galimus prizus iškeitimui</p>
+        </div>
+        <Button 
+          onClick={onCreatePrize}
+          className="bg-vcs-blue hover:bg-vcs-blue/90"
+        >
+          Pridėti Naują Prizą
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-6">
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full bg-gray-200" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {renderPrizeTable(activePrizes, 'Aktyvūs Prizai', 'Nėra aktyvių prizų')}
+          {renderPrizeTable(inactivePrizes, 'Neaktyvūs Prizai', 'Nėra neaktyvių prizų')}
+        </div>
+      )}
 
       {/* View Prize Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>

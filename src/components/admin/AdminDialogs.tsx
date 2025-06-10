@@ -47,6 +47,7 @@ interface AdminDialogsProps {
   setBonusPointsAwarded: (points: string) => void;
   users: User[];
   onAddBonus: () => void;
+  onBonusDialogClose?: () => void;
 
   // Redemption Dialog
   redemptionDialogOpen: boolean;
@@ -106,6 +107,7 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
   setBonusPointsAwarded,
   users,
   onAddBonus,
+  onBonusDialogClose,
 
   redemptionDialogOpen,
   setRedemptionDialogOpen,
@@ -127,6 +129,13 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
 
   isProcessing,
 }) => {
+  const handleBonusDialogClose = () => {
+    setNewBonusDialogOpen(false);
+    if (onBonusDialogClose) {
+      onBonusDialogClose();
+    }
+  };
+
   return (
     <>
       {/* Invite User Dialog */}
@@ -274,7 +283,11 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
       </Dialog>
 
       {/* Add Bonus Points Dialog */}
-      <Dialog open={newBonusDialogOpen} onOpenChange={setNewBonusDialogOpen}>
+      <Dialog open={newBonusDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleBonusDialogClose();
+        }
+      }}>
         <DialogContent className="bg-white text-black border-gray-300">
           <DialogHeader>
             <DialogTitle>Pridėti Bonus Taškų</DialogTitle>
@@ -284,36 +297,16 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="user">Pasirinkite Naudotoją</Label>
-              <Select value={bonusUserId} onValueChange={setBonusUserId}>
-                <SelectTrigger className="bg-gray-50 text-black border-gray-300">
-                  <SelectValue placeholder="Pasirinkite naudotoją" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-50 text-black border-gray-300">
-                  {users
-                    .filter(user => user.role === 'user')
-                    .map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{user.name}</span>
-                          <span className="text-xs text-gray-500">{user.email} • {user.totalPoints} taškų</span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  }
-                </SelectContent>
-              </Select>
-              {bonusUserId && (
-                <div className="mt-2 p-2 bg-gray-100 rounded text-sm">
-                  <strong>Pasirinktas naudotojas:</strong> {users.find(u => u.id === bonusUserId)?.name || 'Naudotojas nerastas'}
-                  <br />
-                  <span className="text-gray-600">
-                    Dabartiniai taškai: {users.find(u => u.id === bonusUserId)?.totalPoints || 0}
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* Show selected user info */}
+            {bonusUserId && (
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-1">Pasirinktas naudotojas:</h4>
+                <p className="text-blue-800 font-semibold">{users.find(u => u.id === bonusUserId)?.name || 'Naudotojas nerastas'}</p>
+                <p className="text-sm text-blue-600">
+                  Dabartiniai taškai: {users.find(u => u.id === bonusUserId)?.totalPoints || 0}
+                </p>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="course-name">Kurso Pavadinimas</Label>
@@ -351,10 +344,10 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
             </div>
           </div>
           
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setNewBonusDialogOpen(false)}
+              onClick={handleBonusDialogClose}
               className="border-gray-300 text-black hover:bg-gray-100"
             >
               Atšaukti

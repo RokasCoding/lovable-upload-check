@@ -23,6 +23,7 @@ import { UserPlus, Award, Link2, MinusCircle, History } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -448,8 +449,6 @@ const Admin: React.FC = () => {
     }
   };
 
-
-
   const handleDeductPoints = async () => {
     if (!selectedUserForDeduction || !pointsToDeduct || !deductionReason) {
       toast({
@@ -553,6 +552,13 @@ const Admin: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleBonusDialogClose = () => {
+    setBonusUserId('');
+    setBonusCourseName('');
+    setBonusCoursePrice('');
+    setBonusPointsAwarded('');
   };
 
   return (
@@ -769,6 +775,7 @@ const Admin: React.FC = () => {
         setBonusPointsAwarded={setBonusPointsAwarded}
         users={users}
         onAddBonus={handleAddBonus}
+        onBonusDialogClose={handleBonusDialogClose}
 
         redemptionDialogOpen={redemptionDialogOpen}
         setRedemptionDialogOpen={setRedemptionDialogOpen}
@@ -793,33 +800,46 @@ const Admin: React.FC = () => {
 
       {/* New Point Deduction Dialog */}
       <Dialog open={deductPointsDialogOpen} onOpenChange={setDeductPointsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white text-black border-gray-300">
           <DialogHeader>
-            <DialogTitle>Atimti taškus</DialogTitle>
+            <DialogTitle>Atimti Bonus Taškų</DialogTitle>
+            <DialogDescription>
+              Atimkite bonus taškus iš naudotojo už pažeidimus ar kitas priežastis.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Show selected user info */}
+            {selectedUserForDeduction && (
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                <h4 className="font-medium text-red-900 mb-1">Pasirinktas naudotojas:</h4>
+                <p className="text-red-800 font-semibold">{selectedUserForDeduction.name}</p>
+                <p className="text-sm text-red-600">
+                  Dabartiniai taškai: {selectedUserForDeduction.totalPoints || 0}
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label>Naudotojas</Label>
+              <Label htmlFor="deduct-points">Atimamų Taškų Kiekis</Label>
               <Input
-                value={selectedUserForDeduction?.name || ''}
-                disabled
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Taškų kiekis</Label>
-              <Input
+                id="deduct-points"
                 type="number"
                 value={pointsToDeduct}
                 onChange={(e) => setPointsToDeduct(e.target.value)}
-                placeholder="Įveskite taškų kiekį"
+                placeholder="50"
+                className="bg-gray-50 text-black border-gray-300"
               />
             </div>
+            
             <div className="space-y-2">
-              <Label>Priežastis</Label>
+              <Label htmlFor="deduct-reason">Priežastis</Label>
               <Textarea
+                id="deduct-reason"
                 value={deductionReason}
                 onChange={(e) => setDeductionReason(e.target.value)}
-                placeholder="Įveskite priežastį"
+                placeholder="Pažeidė taisykles arba netinkamas elgesys"
+                className="bg-gray-50 text-black border-gray-300"
+                rows={3}
               />
             </div>
           </div>
@@ -828,14 +848,16 @@ const Admin: React.FC = () => {
               variant="outline"
               onClick={() => setDeductPointsDialogOpen(false)}
               disabled={isProcessing}
+              className="border-gray-300 text-black hover:bg-gray-100"
             >
               Atšaukti
             </Button>
             <Button
               onClick={handleDeductPoints}
               disabled={isProcessing}
+              className="bg-red-600 hover:bg-red-700"
             >
-              {isProcessing ? "Apdorojama..." : "Atimti taškus"}
+              {isProcessing ? "Atimuama..." : "Atimti Taškus"}
             </Button>
           </DialogFooter>
         </DialogContent>
