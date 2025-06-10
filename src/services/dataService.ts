@@ -43,14 +43,14 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
       throw signUpError;
     }
 
-    // Create a profile record
+    // Create a profile record using our secure function
     if (data.user) {
-      const { error: profileError } = await supabaseService.createProfile({
-        id: data.user.id,
-        email,
-        name,
-        role,
-        total_points: 0
+      const { data: profileData, error: profileError } = await supabase.rpc('create_user_profile', {
+        user_id: data.user.id,
+        user_email: email,
+        user_name: name,
+        user_role: role,
+        initial_points: 0
       });
 
       if (profileError) {
