@@ -1,6 +1,6 @@
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import * as supabaseService from './supabaseService';
-import { sendInviteEmail, sendPrizeRedemptionEmail, sendPointsDeductionEmail } from '@/lib/email';
+import { sendInviteEmail, sendPrizeRedemptionEmail, sendPointsDeductionEmail, sendEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 
 // Helper function to simulate API call delay
@@ -60,23 +60,31 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
     
     console.log('Registration link created:', registrationUrl);
 
-    // Try to send email via Edge Function
+    // Try to send invitation email
     let emailSent = false;
     try {
-      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email-emailjs', {
-        body: {
-          to: email,
-          name: name,
-          registrationUrl: registrationUrl,
-          inviterName: user.user_metadata?.name || 'Administratorius'
-        }
+      const html = `
+        <h2>Pakvietimas prisijungti prie sistemos</h2>
+        <p>Sveiki, ${name}!</p>
+        <p>${user.user_metadata?.name || 'Administratorius'} jus pakviete prisijungti prie mūsų taškų sistemos.</p>
+        <p>Norėdami sukurti paskyrą, spauskite šią nuorodą:</p>
+        <p><a href="${registrationUrl}" style="color: #007bff; text-decoration: none; font-weight: bold;">${registrationUrl}</a></p>
+        <br>
+        <p>Jeigu nuoroda neveikia, nukopijuokite ir įklijuokite ją į naršyklės adreso juostą.</p>
+        <p>Su pagarba,<br>Taškų sistemos komanda</p>
+      `;
+
+      const emailResult = await sendEmail({
+        to: email,
+        subject: 'Pakvietimas prisijungti prie taškų sistemos',
+        html,
       });
 
-      if (emailError) {
-        console.error('Email sending failed:', emailError);
-      } else if (emailResult?.success) {
+      if (!emailResult.error) {
         emailSent = true;
-        console.log('Invitation email sent successfully via EmailJS');
+        console.log('Invitation email sent successfully');
+      } else {
+        console.error('Email sending failed:', emailResult.error);
       }
     } catch (emailError) {
       console.error('Email sending error:', emailError);
@@ -150,6 +158,17 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
     throw new Error('Not enough points');
   }
 
+  // Reserve points immediately by creating a negative entry
+  const reservationEntry = {
+    userId,
+    userName: user.name,
+    courseName: `Rezervuoti taškai prizo "${prize.name}" iškeitimui`,
+    price: 0,
+    pointsAwarded: -prize.points,
+  };
+  
+  await supabaseService.createBonusEntry(reservationEntry);
+
   const redemption = await supabaseService.createRedemption({
     userId,
     userName: user.name,
@@ -165,7 +184,7 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
     .eq('role', 'admin');
 
   if (!adminError && adminUsers) {
-    // Send notifications to all admin users
+    // Send notifications to all admin users (each email function will check individual settings)
     await Promise.all(
       adminUsers.map(admin => 
         sendPrizeRedemptionEmail(

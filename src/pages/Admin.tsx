@@ -368,23 +368,27 @@ const Admin: React.FC = () => {
         action === 'rejected' ? rejectionComment : undefined
       );
       
-      // Update user points if approved
-      if (action === 'approved') {
+      // Handle points based on action
+      if (action === 'rejected') {
+        // Return the reserved points to user when rejected
         const user = users.find(u => u.id === selectedRedemption.userId);
         if (user) {
-          await deductPoints(
-            selectedRedemption.userId, 
-            selectedRedemption.pointCost, 
-            `Iškeistas prizas: ${selectedRedemption.prizeName}`
-          );
+          await createBonusEntry({
+            userId: selectedRedemption.userId,
+            userName: user.name,
+            courseName: `Grąžinti taškai dėl atmesto prizo "${selectedRedemption.prizeName}" iškeitimo`,
+            price: 0,
+            pointsAwarded: selectedRedemption.pointCost,
+          });
         }
       }
+      // Note: If approved, points are already reserved/deducted, so no additional action needed
       
       toast({
         title: action === 'approved' ? 'Prašymas patvirtintas' : 'Prašymas atmestas',
         description: action === 'approved' 
           ? `Prizo "${selectedRedemption.prizeName}" iškeitimas patvirtintas` 
-          : `Prizo "${selectedRedemption.prizeName}" iškeitimas atmestas`,
+          : `Prizo "${selectedRedemption.prizeName}" iškeitimas atmestas ir taškai grąžinti`,
       });
       
       // Refresh redemptions list
