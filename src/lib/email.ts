@@ -132,6 +132,7 @@ export const sendEmail = async (data: EmailData) => {
 export const sendPrizeRedemptionEmail = async (
   adminEmail: string,
   userName: string,
+  userEmail: string,
   prizeName: string,
   redemptionId: string
 ) => {
@@ -140,6 +141,7 @@ export const sendPrizeRedemptionEmail = async (
       body: {
         adminEmail: adminEmail,
         userName: userName,
+        userEmail: userEmail,
         prizeName: prizeName,
         redemptionId: redemptionId
       }

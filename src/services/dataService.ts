@@ -182,6 +182,7 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
         sendPrizeRedemptionEmail(
           admin.email,
           user.name,
+          user.email,
           prize.name,
           redemption.id
         )
