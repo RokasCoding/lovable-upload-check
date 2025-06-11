@@ -63,7 +63,7 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
     // Try to send email via Edge Function
     let emailSent = false;
     try {
-      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email-emailjs', {
         body: {
           to: email,
           name: name,
@@ -76,7 +76,7 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
         console.error('Email sending failed:', emailError);
       } else if (emailResult?.success) {
         emailSent = true;
-        console.log('Email sent successfully:', emailResult.messageId);
+        console.log('Invitation email sent successfully via EmailJS');
       }
     } catch (emailError) {
       console.error('Email sending error:', emailError);

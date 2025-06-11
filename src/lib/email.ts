@@ -136,43 +136,28 @@ export const sendPrizeRedemptionEmail = async (
   redemptionId: string
 ) => {
   try {
-    // Get admin user to check notification settings
-    const { data: adminData, error: adminError } = await supabase
-      .from('users')
-      .select('user_metadata')
-      .eq('email', adminEmail)
-      .single();
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
+      body: {
+        adminEmail: adminEmail,
+        userName: userName,
+        prizeName: prizeName,
+        redemptionId: redemptionId
+      }
+    });
 
-    if (adminError) throw adminError;
+    if (emailError) {
+      console.error('Failed to send prize notification email:', emailError);
+      return { success: false, error: emailError.message };
+    }
 
-    // Check if prize redemption notifications are enabled
-    const settings = adminData?.user_metadata?.notificationSettings;
-    if (!settings?.prizeRedemptions) {
-      console.log('Prize redemption notifications are disabled for this admin');
+    if (emailResult?.success) {
+      console.log('Prize notification email sent successfully via EmailJS');
       return { success: true };
     }
 
-    const confirmUrl = `${window.location.origin}/admin?tab=redemptions&confirm=${redemptionId}`;
-    const rejectUrl = `${window.location.origin}/admin?tab=redemptions&reject=${redemptionId}`;
-
-    const html = `
-      <h2>Naujas prizo išpirkimo prašymas</h2>
-      <p>Naudotojas ${userName} nori išpirkti prizą "${prizeName}".</p>
-      <p>Norėdami patvirtinti arba atmesti prašymą, spauskite vieną iš šių nuorodų:</p>
-      <p>
-        <a href="${confirmUrl}" style="display: inline-block; padding: 10px 20px; margin-right: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Patvirtinti</a>
-        <a href="${rejectUrl}" style="display: inline-block; padding: 10px 20px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px;">Atmesti</a>
-      </p>
-      <p>Arba galite tai padaryti administratoriaus skydelyje.</p>
-    `;
-
-    return sendEmail({
-      to: adminEmail,
-      subject: `Naujas prizo išpirkimo prašymas - ${prizeName}`,
-      html,
-    });
+    return { success: false, error: 'Unknown error sending email' };
   } catch (error: any) {
-    console.error('Failed to send prize redemption email:', error);
+    console.error('Failed to send prize notification email:', error);
     return { 
       success: false, 
       error: error.message || 'Nepavyko išsiųsti el. laiško' 
