@@ -4,6 +4,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 interface PrizeNotificationRequest {
   adminEmail: string;
   userName: string;
+  userEmail: string;
   prizeName: string;
   redemptionId: string;
 }
@@ -44,9 +45,9 @@ Deno.serve(async (req: Request) => {
       throw new Error('EmailJS environment variables are not set');
     }
 
-    const { adminEmail, userName, prizeName, redemptionId }: PrizeNotificationRequest = await req.json();
+    const { adminEmail, userName, userEmail, prizeName, redemptionId }: PrizeNotificationRequest = await req.json();
 
-    if (!adminEmail || !userName || !prizeName || !redemptionId) {
+    if (!adminEmail || !userName || !userEmail || !prizeName || !redemptionId) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         {
@@ -93,11 +94,11 @@ Deno.serve(async (req: Request) => {
 
     // Prepare template parameters for EmailJS
     const templateParams = {
-      admin_email: adminEmail,
       user_name: userName,
+      user_email: userEmail,
       prize_name: prizeName,
       redemption_id: redemptionId,
-      admin_url: 'https://gvitpmixijacetppzusx.supabase.co'
+      admin_panel_url: 'https://gvitpmixijacetppzusx.supabase.co'
     };
 
     // Send email via EmailJS
