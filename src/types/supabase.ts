@@ -195,6 +195,67 @@ export interface Database {
           used_by?: string | null
         }
       }
+      invites: {
+        Row: {
+          id: string
+          email: string
+          name: string
+          role: 'admin' | 'user'
+          invite_id: string
+          expires_at: string
+          created_at: string
+          used_at: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          name: string
+          role?: 'admin' | 'user'
+          invite_id: string
+          expires_at: string
+          created_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string
+          role?: 'admin' | 'user'
+          invite_id?: string
+          expires_at?: string
+          created_at?: string
+          used_at?: string | null
+        }
+      }
+      rate_limits: {
+        Row: {
+          id: string
+          ip: string | null
+          email: string | null
+          endpoint: string
+          attempts: number
+          last_attempt: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          ip?: string | null
+          email?: string | null
+          endpoint: string
+          attempts?: number
+          last_attempt?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          ip?: string | null
+          email?: string | null
+          endpoint?: string
+          attempts?: number
+          last_attempt?: string | null
+          created_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
