@@ -32,6 +32,10 @@ export default async function handler(
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Error sending email:', error);
-    return res.status(500).json({ error: error.message || 'Failed to send email' });
+    // Check if the send-email edge function is deployed in Supabase
+    // If not, return a clear error and recommend using the deployed edge functions
+    return res.status(501).json({
+      error: 'The send-email edge function is not deployed. Use send-invitation-email-emailjs or send-prize-notification-emailjs instead.'
+    });
   }
 } 

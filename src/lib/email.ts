@@ -136,42 +136,26 @@ export const sendPrizeRedemptionEmail = async (
   redemptionId: string
 ) => {
   try {
-    // Get admin user to check notification settings
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', adminEmail)
-      .single();
-
-    if (adminError) {
-      console.error('Failed to get admin data:', adminError);
-      // Fallback: send email anyway if we can't check settings
-    } else {
-      // Get user metadata from auth to check notification settings
-      const { data: adminUserData } = await supabase.auth.admin.getUserById(adminData.id);
-      const settings = adminUserData?.user?.user_metadata?.notificationSettings;
-      
-      // Check if prize redemption notifications are enabled (default to true for backwards compatibility)
-      if (settings?.prizeRedemptions === false) {
-        console.log('Prize redemption notifications are disabled for this admin');
-        return { success: true };
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
+      body: {
+        adminEmail: adminEmail,
+        userName: userName,
+        prizeName: prizeName,
+        redemptionId: redemptionId
       }
+    });
+
+    if (emailError) {
+      console.error('Failed to send prize notification email:', emailError);
+      return { success: false, error: emailError.message };
     }
 
-    const html = `
-      <h2>Naujas prizo iškeitimo prašymas</h2>
-      <p>Naudotojas <strong>${userName}</strong> prašo iškeisti prizą <strong>"${prizeName}"</strong>.</p>
-      <p>Peržiūrėkite ir patvirtinkite arba atmeskite šį prašymą administratoriaus skydelyje.</p>
-      <p>Prašymo ID: ${redemptionId}</p>
-      <br>
-      <p>Prisijunkite prie sistemos ir peržiūrėkite prašymą "Prizų iškeitimo prašymai" skiltyje.</p>
-    `;
+    if (emailResult?.success) {
+      console.log('Prize notification email sent successfully via edge function');
+      return { success: true };
+    }
 
-    return sendEmail({
-      to: adminEmail,
-      subject: `Naujas prizo iškeitimo prašymas - ${prizeName}`,
-      html,
-    });
+    return { success: false, error: 'Unknown error sending email' };
   } catch (error: any) {
     console.error('Failed to send prize notification email:', error);
     return { 

@@ -1,6 +1,6 @@
 import { BonusEntry, Prize, PrizeRedemption, Stats, User } from '@/types';
 import * as supabaseService from './supabaseService';
-import { sendInviteEmail, sendPrizeRedemptionEmail, sendPointsDeductionEmail, sendEmail } from '@/lib/email';
+import { sendInviteEmail, sendPrizeRedemptionEmail, sendPointsDeductionEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 
 // Helper function to simulate API call delay
@@ -60,31 +60,23 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
     
     console.log('Registration link created:', registrationUrl);
 
-    // Try to send invitation email
+    // Try to send email via Edge Function
     let emailSent = false;
     try {
-      const html = `
-        <h2>Pakvietimas prisijungti prie sistemos</h2>
-        <p>Sveiki, ${name}!</p>
-        <p>${user.user_metadata?.name || 'Administratorius'} jus pakviete prisijungti prie mūsų taškų sistemos.</p>
-        <p>Norėdami sukurti paskyrą, spauskite šią nuorodą:</p>
-        <p><a href="${registrationUrl}" style="color: #007bff; text-decoration: none; font-weight: bold;">${registrationUrl}</a></p>
-        <br>
-        <p>Jeigu nuoroda neveikia, nukopijuokite ir įklijuokite ją į naršyklės adreso juostą.</p>
-        <p>Su pagarba,<br>Taškų sistemos komanda</p>
-      `;
-
-      const emailResult = await sendEmail({
-        to: email,
-        subject: 'Pakvietimas prisijungti prie taškų sistemos',
-        html,
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email-emailjs', {
+        body: {
+          to: email,
+          name: name,
+          registrationUrl: registrationUrl,
+          inviterName: user.user_metadata?.name || 'Administratorius'
+        }
       });
 
-      if (!emailResult.error) {
+      if (emailError) {
+        console.error('Email sending failed:', emailError);
+      } else if (emailResult?.success) {
         emailSent = true;
-        console.log('Invitation email sent successfully');
-      } else {
-        console.error('Email sending failed:', emailResult.error);
+        console.log('Invitation email sent successfully via edge function');
       }
     } catch (emailError) {
       console.error('Email sending error:', emailError);
