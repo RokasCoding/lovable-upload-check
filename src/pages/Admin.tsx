@@ -194,12 +194,36 @@ const Admin: React.FC = () => {
     
     setIsProcessing(true);
     try {
-      const success = await inviteUser(inviteEmail, inviteName, inviteRole);
-      if (success) {
-        toast({
-          title: "Sėkmė",
-          description: `Pakvietimas išsiųstas adresu ${inviteEmail}`,
-        });
+      const result = await inviteUser(inviteEmail, inviteName, inviteRole);
+      if (result.success && result.registrationUrl) {
+        if (result.emailSent) {
+          // Email was sent successfully
+          toast({
+            title: "Sėkmė",
+            description: `Pakvietimas sėkmingai išsiųstas el. paštu ${inviteEmail}`,
+          });
+        } else {
+          // Email failed, show manual link
+          toast({
+            title: "Registracijos nuoroda sukurta",
+            description: (
+              <div className="space-y-2">
+                <p>El. laiškas nepavyko išsiųsti, bet registracijos nuoroda sukurta!</p>
+                <p className="text-sm text-gray-600">Pasidalinkite šia nuoroda su naudotoju {inviteEmail}:</p>
+                <div className="p-2 bg-gray-100 rounded break-all text-xs">
+                  {result.registrationUrl}
+                </div>
+              </div>
+            ),
+            duration: 10000, // Show for 10 seconds
+          });
+          
+          // Copy to clipboard
+          navigator.clipboard.writeText(result.registrationUrl).catch(() => {
+            console.log('Could not copy to clipboard');
+          });
+        }
+        
         setInviteDialogOpen(false);
         setInviteName('');
         setInviteEmail('');

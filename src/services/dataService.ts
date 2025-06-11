@@ -27,65 +27,80 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
   }
 };
 
-export const inviteUser = async (email: string, name: string, role: 'admin' | 'user'): Promise<boolean> => {
+export const inviteUser = async (email: string, name: string, role: 'admin' | 'user'): Promise<{success: boolean, registrationUrl?: string, emailSent?: boolean}> => {
   try {
-    // Check if user already exists in Supabase
+    // Check if user already exists using our secure function
     const existingUser = await supabaseService.getUserByEmail(email);
 
     if (existingUser) {
       throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
     }
 
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(-12);
-
-    // Create user account with Supabase Auth
-    const { data, error: signUpError } = await supabaseService.signUp({
-      email,
-      password: tempPassword,
-      metadata: {
-        name,
-        role,
-        isInvited: true,
-        emailRedirectTo: `${window.location.origin}/reset-password`
-      }
-    });
-
-    if (signUpError) {
-      throw signUpError;
+    // Get current user ID for the invitation
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Nepavyko nustatyti dabartinio naudotojo');
     }
 
-    // Create a profile record using our secure function
-    if (data.user) {
-      const { data: profileData, error: profileError } = await supabase.rpc('create_user_profile', {
-        user_id: data.user.id,
-        user_email: email,
-        user_name: name,
-        user_role: role,
-        initial_points: 0
+    // Create invitation using our secure function
+    const { data: inviteResult, error: inviteError } = await supabase
+      .rpc('invite_user', {
+        inviter_id: user.id,
+        invite_email: email,
+        invite_name: name,
+        invite_role: role
       });
 
-      if (profileError) {
-        // If profile creation fails, delete the auth user
-        await supabaseService.deleteUser(data.user.id);
-        throw profileError;
-      }
+    if (inviteError) {
+      throw inviteError;
     }
 
-    return true;
-      } catch (error: any) {
-      console.error('Failed to invite user:', error);
-      const errorMessage = error.message || 'Nepavyko išsiųsti pakvietimo';
-      
-      // Provide more specific error messages
-      if (error.message?.includes('duplicate')) {
-        throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
-      } else if (error.message?.includes('invalid email')) {
-        throw new Error('Neteisingas el. pašto formatas');
+    // Generate registration URL
+    const registrationUrl = `${window.location.origin}/register?token=${inviteResult.link_token}`;
+    
+    console.log('Registration link created:', registrationUrl);
+
+    // Try to send email via Edge Function
+    let emailSent = false;
+    try {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+        body: {
+          to: email,
+          name: name,
+          registrationUrl: registrationUrl,
+          inviterName: user.user_metadata?.name || 'Administratorius'
+        }
+      });
+
+      if (emailError) {
+        console.error('Email sending failed:', emailError);
+      } else if (emailResult?.success) {
+        emailSent = true;
+        console.log('Email sent successfully:', emailResult.messageId);
       }
-      
-      throw new Error(errorMessage);
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // Don't throw here - we still want to return the registration URL
     }
+    
+    return {
+      success: true,
+      registrationUrl,
+      emailSent
+    };
+  } catch (error: any) {
+    console.error('Failed to invite user:', error);
+    const errorMessage = error.message || 'Nepavyko išsiųsti pakvietimo';
+    
+    // Provide more specific error messages
+    if (error.message?.includes('already exists')) {
+      throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
+    } else if (error.message?.includes('invalid email')) {
+      throw new Error('Neteisingas el. pašto formatas');
+    }
+    
+    throw new Error(errorMessage);
+  }
 };
 
 // Bonus entries related functions

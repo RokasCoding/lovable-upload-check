@@ -42,23 +42,17 @@ export const getUserById = async (id: string): Promise<User | null> => {
 };
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('email', email)
-    .single();
+  // Use RPC function to bypass RLS for admin operations
+  const { data: exists, error } = await supabase
+    .rpc('check_user_exists_by_email', { user_email: email });
     
-  if (error) return null;
-  return {
-    id: data.id,
-    name: data.name,
-    email: data.email,
-    phone: data.phone,
-    role: data.role,
-    totalPoints: data.total_points,
-    isVerified: data.is_verified,
-    createdAt: data.created_at,
-  };
+  if (error) {
+    console.error('Error checking user existence:', error);
+    return null;
+  }
+  
+  // If user exists, we return a simple indicator - we don't need full user data for invitation checking
+  return exists ? { email } as any : null;
 };
 
 export const signUp = async (params: { 
