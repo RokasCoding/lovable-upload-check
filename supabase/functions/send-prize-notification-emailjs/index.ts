@@ -8,16 +8,24 @@ interface PrizeNotificationRequest {
   redemptionId: string;
 }
 
+const EMAILJS_SERVICE_ID = Deno.env.get('EMAILJS_SERVICE_ID');
+const EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID = Deno.env.get('EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID');
+const EMAILJS_PUBLIC_KEY = Deno.env.get('EMAILJS_PUBLIC_KEY');
+const EMAILJS_PRIVATE_KEY = Deno.env.get('EMAILJS_PRIVATE_KEY');
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
+};
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
+    return new Response('ok', {
+      headers: corsHeaders,
+      status: 200
     });
   }
 
@@ -27,18 +35,14 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ error: 'Method not allowed' }),
         {
           status: 405,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
+          headers: corsHeaders
         }
       );
     }
 
-    // Initialize Supabase client with service role key for admin operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !EMAILJS_PRIVATE_KEY) {
+      throw new Error('EmailJS environment variables are not set');
+    }
 
     const { adminEmail, userName, prizeName, redemptionId }: PrizeNotificationRequest = await req.json();
 
@@ -47,15 +51,16 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ error: 'Missing required fields' }),
         {
           status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
+          headers: corsHeaders
         }
       );
     }
 
     // Get admin user to check notification settings
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { data: adminData, error: adminError } = await supabase
       .from('profiles')
       .select('id')
@@ -80,84 +85,73 @@ Deno.serve(async (req: Request) => {
           }),
           {
             status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-            },
+            headers: corsHeaders
           }
         );
       }
     }
 
-    // Prepare email content
-    const html = `
-      <h2>Naujas prizo iškeitimo prašymas</h2>
-      <p>Naudotojas <strong>${userName}</strong> prašo iškeisti prizą <strong>"${prizeName}"</strong>.</p>
-      <p>Peržiūrėkite ir patvirtinkite arba atmeskite šį prašymą administratoriaus skydelyje.</p>
-      <p>Prašymo ID: ${redemptionId}</p>
-      <br>
-      <p>Prisijunkite prie sistemos ir peržiūrėkite prašymą "Prizų iškeitimo prašymai" skiltyje.</p>
-    `;
+    // Prepare template parameters for EmailJS
+    const templateParams = {
+      admin_email: adminEmail,
+      user_name: userName,
+      prize_name: prizeName,
+      redemption_id: redemptionId,
+      admin_url: 'https://gvitpmixijacetppzusx.supabase.co'
+    };
 
-    // Send email using the send-email function
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: adminEmail,
-        subject: `Naujas prizo iškeitimo prašymas - ${prizeName}`,
-        html: html,
-      }
+    // Send email via EmailJS
+    const emailPayload = {
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      accessToken: EMAILJS_PRIVATE_KEY,
+      template_params: templateParams
+    };
+
+    const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
     });
 
-    if (emailError) {
-      console.error('Failed to send email:', emailError);
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error('EmailJS API error:', emailResponse.status, errorText);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to send email',
-          details: emailError.message
+        JSON.stringify({
+          success: false,
+          error: `EmailJS API error: ${emailResponse.status}`
         }),
         {
           status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
+          headers: corsHeaders
         }
       );
     }
 
-    console.log('Prize notification email sent successfully');
-    
+    const result = await emailResponse.text();
+    console.log('Prize notification email sent successfully:', result);
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        message: 'Prize notification email sent successfully',
-        recipient: adminEmail,
-        prizeName: prizeName
+        message: 'Prize notification email sent successfully'
       }),
       {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: corsHeaders
       }
     );
-
   } catch (error) {
-    console.error('Prize notification error:', error);
-    
+    console.error('Error in send-prize-notification-emailjs function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Failed to send prize notification',
-        details: error instanceof Error ? error.message : 'Unknown error'
+      JSON.stringify({
+        success: false,
+        error: error.message || 'Unknown error'
       }),
       {
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: corsHeaders
       }
     );
   }
