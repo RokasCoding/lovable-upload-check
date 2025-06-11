@@ -35,7 +35,7 @@ export const AuthService = {
       // First validate the registration link if provided
       if (metadata.linkToken) {
         const { data: isValid, error: validationError } = await supabase
-          .rpc('validate_registration_link', { link_token: metadata.linkToken });
+          .rpc('validate_registration_link', { token_param: metadata.linkToken });
 
         if (validationError || !isValid) {
           throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');

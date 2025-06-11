@@ -51,7 +51,7 @@ const Register: React.FC = () => {
 
       try {
         const { data, error } = await supabase
-          .rpc('validate_registration_link', { link_token: linkToken });
+          .rpc('validate_registration_link', { token_param: linkToken });
 
         if (error || !data) {
           throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
