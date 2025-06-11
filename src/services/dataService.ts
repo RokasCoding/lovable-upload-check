@@ -160,7 +160,7 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
 
   // Get all admin users to send notifications
   const { data: adminUsers, error: adminError } = await supabase
-    .from('users')
+    .from('profiles')
     .select('email')
     .eq('role', 'admin');
 
@@ -213,7 +213,7 @@ export const deductPoints = async (userId: string, points: number, reason: strin
 
   // Get all admin users to send notifications
   const { data: adminUsers, error: adminError } = await supabase
-    .from('users')
+    .from('profiles')
     .select('email')
     .eq('role', 'admin');
 

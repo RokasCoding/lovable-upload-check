@@ -46,6 +46,7 @@ export const AuthService = {
         throw new Error('Password does not meet security requirements');
       }
 
+      // Use standard Supabase auth signup - trigger will auto-confirm
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -61,17 +62,18 @@ export const AuthService = {
       if (error) throw error;
 
       // If registration is successful and we have a link token, mark it as used
-      if (metadata.linkToken) {
+      if (metadata.linkToken && data.user) {
         await supabase
           .from('registration_links')
           .update({ 
             used_at: new Date().toISOString(),
-            used_by: data.user?.id
+            used_by: data.user.id
           })
           .eq('link_token', metadata.linkToken);
       }
 
       return { data, error: null };
+
     } catch (error: any) {
       console.error('Registration error:', error);
       return {

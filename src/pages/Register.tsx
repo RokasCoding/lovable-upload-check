@@ -116,7 +116,7 @@ const Register: React.FC = () => {
 
       toast({ 
         title: 'Registracija sėkminga', 
-        description: 'Patikrinkite savo el. paštą, kad patvirtintumėte paskyrą.' 
+        description: 'Jūsų paskyra sukurta! Galite prisijungti su savo duomenimis.' 
       });
       navigate('/login');
     } catch (error: any) {
