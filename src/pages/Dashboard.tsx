@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
                     {isLoadingUser ? (
                       <Skeleton className="h-12 w-24 bg-muted" />
                     ) : (
-                      <span className="point-badge text-4xl">{totalPoints}</span>
+                      <span className="point-badge point-badge-lg">{totalPoints}</span>
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
