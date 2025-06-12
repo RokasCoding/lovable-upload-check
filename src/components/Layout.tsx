@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="bg-[#2D2D35] py-4 px-6 shadow-md border-b-2 border-vcs-black">
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="bg-white p-2 rounded">
+            <div className="p-2 rounded">
               <img 
                 src="https://www.vilniuscoding.lt/wp-content/uploads/2023/08/VCS-Logo-2023-PNG-be-fono-08-130x57.png" 
                 alt="Vilnius Coding School Logo" 
