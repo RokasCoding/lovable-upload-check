@@ -172,7 +172,13 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
       prize.name,
       redemption.id
     );
+    console.log('Prize redemption email result:', result);
+    
+    if (!result.success) {
+      console.error('Prize redemption email failed:', result.error);
+    }
   } catch (error) {
+    console.error('Prize redemption email error:', error);
     // Don't throw here - redemption should still be created even if emails fail
   }
 

@@ -113,10 +113,21 @@ export const sendPrizeRedemptionEmail = async (
   redemptionId: string
 ) => {
   try {
+    console.log('sendPrizeRedemptionEmail called with:', {
+      adminEmail,
+      userName,
+      userEmail,
+      prizeName,
+      redemptionId
+    });
+
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError) {
+      console.error('Authentication error:', authError);
       return { success: false, error: `Authentication error: ${authError.message}` };
     }
+
+    console.log('Authentication successful, calling edge function...');
 
     const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
       body: {
@@ -128,16 +139,22 @@ export const sendPrizeRedemptionEmail = async (
       }
     });
 
+    console.log('Edge function response:', { emailResult, emailError });
+
     if (emailError) {
+      console.error('Edge function error details:', emailError);
       return { success: false, error: `Edge function error: ${emailError.message}` };
     }
 
     if (emailResult?.success) {
+      console.log('Email sent successfully');
       return { success: true };
     }
 
+    console.error('Email result indicates failure:', emailResult);
     return { success: false, error: emailResult?.error || 'Unknown error sending email' };
   } catch (error: any) {
+    console.error('Exception in sendPrizeRedemptionEmail:', error);
     return { 
       success: false, 
       error: `Exception: ${error.message || 'Nepavyko išsiųsti el. laiško'}` 
