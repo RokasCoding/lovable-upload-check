@@ -108,7 +108,7 @@ const Prizes: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8 bg-[#2D2D35] rounded-lg px-6 py-5">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Galimi prizai</h1>
             <p className="text-muted-foreground mt-1">Iškeiskite savo premijos taškus į šiuos prizus</p>

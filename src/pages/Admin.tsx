@@ -642,7 +642,7 @@ const Admin: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 bg-white min-h-screen">
+      <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-black">Administratoriaus Panelė</h1>
           <div className="flex gap-3">
@@ -672,152 +672,150 @@ const Admin: React.FC = () => {
           </div>
         </div>
         
-        <div className="mb-8 bg-[#2D2D35] rounded-lg px-6 py-5">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-gray-100">
-              <TabsTrigger value="dashboard">Pagrindinis</TabsTrigger>
-              <TabsTrigger value="new-members">Nauji Nariai</TabsTrigger>
-              <TabsTrigger value="users">Naudotojai</TabsTrigger>
-              <TabsTrigger value="prizes">Prizai</TabsTrigger>
-              <TabsTrigger value="redemptions">Iškeičiami Prizai</TabsTrigger>
-              <TabsTrigger value="registration-links">Registracijos nuorodos</TabsTrigger>
-              <TabsTrigger value="settings">Nustatymai</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="dashboard">
-              <AdminStats stats={stats} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="new-members">
-              <AdminNewMembers 
-                users={users} 
-                isLoading={isLoading} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="users">
-              <AdminUsers
-                users={users}
-                isLoading={isLoading}
-                onInviteUser={() => setInviteDialogOpen(true)}
-                onAddBonus={(userId) => {
-                  setBonusUserId(userId);
-                  setNewBonusDialogOpen(true);
-                }}
-                onDeductPoints={(user) => {
-                  setSelectedUserForDeduction(user);
-                  setDeductPointsDialogOpen(true);
-                }}
-                onViewHistory={(user) => handleViewPointHistory(user)}
-                onDeleteUser={(user) => handleDeleteUser(user)}
-              />
-            </TabsContent>
-            
-            <TabsContent value="prizes">
-              <AdminPrizes 
-                prizes={prizes} 
-                isLoading={isLoading} 
-                onCreatePrize={() => setNewPrizeDialogOpen(true)}
-                onRefreshPrizes={async () => {
-                  try {
-                    const prizesData = await getAllPrizes();
-                    setPrizes(prizesData);
-                  } catch (error) {
-                    console.error('Failed to refresh prizes:', error);
-                  }
-                }}
-              />
-            </TabsContent>
-            
-            <TabsContent value="redemptions">
-              <AdminRedemptions 
-                redemptions={redemptions} 
-                isLoading={isLoading} 
-                onViewRedemption={handleViewRedemption}
-                onRedemptionAction={handleRedemptionQuickAction}
-              />
-            </TabsContent>
-            
-            <TabsContent value="registration-links">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Registracijos nuorodos</CardTitle>
-                  <CardDescription>
-                    Valdykite registracijos nuorodas naujiems naudotojams
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Sukurta</TableHead>
-                            <TableHead>Pilna Nuoroda</TableHead>
-                            <TableHead>Būsena</TableHead>
-                            <TableHead>Registracijos</TableHead>
-                            <TableHead>Veiksmai</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {registrationLinks.map((link) => {
-                            const fullUrl = `${domainName}/register?token=${link.link_token}`;
-                            const usageCount = registrationUsages[link.id] || 0;
-                            return (
-                              <TableRow key={link.id}>
-                                <TableCell>
-                                  {new Date(link.created_at).toLocaleString('lt-LT')}
-                                </TableCell>
-                                <TableCell>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-gray-100">
+            <TabsTrigger value="dashboard">Pagrindinis</TabsTrigger>
+            <TabsTrigger value="new-members">Nauji Nariai</TabsTrigger>
+            <TabsTrigger value="users">Naudotojai</TabsTrigger>
+            <TabsTrigger value="prizes">Prizai</TabsTrigger>
+            <TabsTrigger value="redemptions">Iškeičiami Prizai</TabsTrigger>
+            <TabsTrigger value="registration-links">Registracijos nuorodos</TabsTrigger>
+            <TabsTrigger value="settings">Nustatymai</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dashboard">
+            <AdminStats stats={stats} isLoading={isLoading} />
+          </TabsContent>
+          
+          <TabsContent value="new-members">
+            <AdminNewMembers 
+              users={users} 
+              isLoading={isLoading} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <AdminUsers
+              users={users}
+              isLoading={isLoading}
+              onInviteUser={() => setInviteDialogOpen(true)}
+              onAddBonus={(userId) => {
+                setBonusUserId(userId);
+                setNewBonusDialogOpen(true);
+              }}
+              onDeductPoints={(user) => {
+                setSelectedUserForDeduction(user);
+                setDeductPointsDialogOpen(true);
+              }}
+              onViewHistory={(user) => handleViewPointHistory(user)}
+              onDeleteUser={(user) => handleDeleteUser(user)}
+            />
+          </TabsContent>
+          
+          <TabsContent value="prizes">
+            <AdminPrizes 
+              prizes={prizes} 
+              isLoading={isLoading} 
+              onCreatePrize={() => setNewPrizeDialogOpen(true)}
+              onRefreshPrizes={async () => {
+                try {
+                  const prizesData = await getAllPrizes();
+                  setPrizes(prizesData);
+                } catch (error) {
+                  console.error('Failed to refresh prizes:', error);
+                }
+              }}
+            />
+          </TabsContent>
+          
+          <TabsContent value="redemptions">
+            <AdminRedemptions 
+              redemptions={redemptions} 
+              isLoading={isLoading} 
+              onViewRedemption={handleViewRedemption}
+              onRedemptionAction={handleRedemptionQuickAction}
+            />
+          </TabsContent>
+          
+          <TabsContent value="registration-links">
+            <Card>
+              <CardHeader>
+                <CardTitle>Registracijos nuorodos</CardTitle>
+                <CardDescription>
+                  Valdykite registracijos nuorodas naujiems naudotojams
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sukurta</TableHead>
+                          <TableHead>Pilna Nuoroda</TableHead>
+                          <TableHead>Būsena</TableHead>
+                          <TableHead>Registracijos</TableHead>
+                          <TableHead>Veiksmai</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {registrationLinks.map((link) => {
+                          const fullUrl = `${domainName}/register?token=${link.link_token}`;
+                          const usageCount = registrationUsages[link.id] || 0;
+                          return (
+                            <TableRow key={link.id}>
+                              <TableCell>
+                                {new Date(link.created_at).toLocaleString('lt-LT')}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  className="h-auto p-0 font-mono"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(fullUrl);
+                                    toast({
+                                      title: 'Nukopijuota',
+                                      description: 'Pilna nuoroda nukopijuota į iškarpinę',
+                                    });
+                                  }}
+                                >
+                                  {fullUrl}
+                                </Button>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={link.is_active ? 'default' : 'secondary'}>
+                                  {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {usageCount}
+                              </TableCell>
+                              <TableCell>
+                                {link.is_active && (
                                   <Button
-                                    variant="ghost"
-                                    className="h-auto p-0 font-mono"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(fullUrl);
-                                      toast({
-                                        title: 'Nukopijuota',
-                                        description: 'Pilna nuoroda nukopijuota į iškarpinę',
-                                      });
-                                    }}
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deactivateRegistrationLink(link.id)}
                                   >
-                                    {fullUrl}
+                                    Deaktyvuoti
                                   </Button>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={link.is_active ? 'default' : 'secondary'}>
-                                    {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {usageCount}
-                                </TableCell>
-                                <TableCell>
-                                  {link.is_active && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => deactivateRegistrationLink(link.id)}
-                                    >
-                                      Deaktyvuoti
-                                    </Button>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="settings">
-              <AdminSettings />
-            </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings">
+            <AdminSettings />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <AdminDialogs

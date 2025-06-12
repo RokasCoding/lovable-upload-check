@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-6 mb-8 bg-[#2D2D35] rounded-lg px-6 py-5">
+        <div className="flex flex-col md:flex-row gap-6 mb-8">
           {/* Points summary card */}
           {!isAdmin && (
             <Card className="flex-1 bg-background border-border animate-fade-in">
