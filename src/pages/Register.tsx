@@ -67,11 +67,7 @@ const Register: React.FC = () => {
           });
 
         if (error || !data) {
-          if (invitedEmail) {
-            throw new Error('Ši registracijos nuoroda skirta kitam el. pašto adresui');
-          } else {
-            throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
-          }
+          throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
         }
 
         setIsValidLink(true);
