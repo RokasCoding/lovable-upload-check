@@ -59,21 +59,12 @@ const Register: React.FC = () => {
       }
 
       try {
-        // Debug logging
-        console.log('Validation parameters:', {
-          linkToken,
-          invitedEmail,
-          decodedEmail: invitedEmail ? decodeURIComponent(invitedEmail) : null
-        });
-
         // Validate the registration link with email if provided
         const { data, error } = await supabase
           .rpc('validate_registration_link', { 
             token_param: linkToken,
             email_param: invitedEmail ? decodeURIComponent(invitedEmail) : null
           });
-
-        console.log('Validation result:', { data, error });
 
         if (error || !data) {
           console.error('Validation failed:', error);

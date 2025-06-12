@@ -49,7 +49,7 @@ export const AuthService = {
         throw new Error('Password does not meet security requirements');
       }
 
-      // Use standard Supabase auth signup - trigger will auto-confirm
+      // Use standard Supabase auth signup - trigger will auto-confirm and process registration link
       console.log('📝 Creating user account...');
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -59,89 +59,14 @@ export const AuthService = {
             name: metadata.name,
             phone: metadata.phone,
             role: 'user',
+            linkToken: metadata.linkToken, // This will be processed by the database trigger
           },
         },
       });
 
       if (error) throw error;
       console.log('✅ User account created successfully:', data.user?.id);
-
-      // If registration is successful and we have a link token, mark it as used
-      if (metadata.linkToken && data.user) {
-        console.log('🔗 Processing registration link for user:', data.user.id);
-        
-        try {
-          // Mark link as used
-          const { error: updateError } = await supabase
-            .from('registration_links')
-            .update({ 
-              used_at: new Date().toISOString(),
-              used_by: data.user.id
-            })
-            .eq('link_token', metadata.linkToken);
-          
-          if (updateError) {
-            console.error('❌ Failed to mark link as used:', updateError);
-            throw updateError;
-          }
-          console.log('✅ Link marked as used');
-
-          // Get link details for points
-          const { data: linkRow, error: linkError } = await supabase
-            .from('registration_links')
-            .select('id, points')
-            .eq('link_token', metadata.linkToken)
-            .single();
-          
-          if (linkError) {
-            console.error('❌ Failed to fetch link details:', linkError);
-            throw linkError;
-          }
-          console.log('📊 Link details:', linkRow);
-
-          if (linkRow) {
-            // Insert usage tracking
-            const { error: usageInsertError } = await supabase
-              .from('registration_link_usages')
-              .insert({
-                link_id: linkRow.id,
-                user_id: data.user.id,
-                used_at: new Date().toISOString(),
-              });
-            
-            if (usageInsertError) {
-              console.error('❌ Failed to insert registration_link_usages:', usageInsertError);
-            } else {
-              console.log('✅ Usage tracking recorded');
-            }
-
-            // Award bonus points if the link has points > 0
-            if (linkRow.points > 0) {
-              console.log('🎁 Awarding bonus points:', linkRow.points);
-              const { error: bonusError } = await supabase
-                .from('bonus_entries')
-                .insert({
-                  user_id: data.user.id,
-                  user_name: metadata.name,
-                  course_name: 'Registracija su pakvietimo nuoroda',
-                  price: 0,
-                  points_awarded: linkRow.points,
-                });
-              
-              if (bonusError) {
-                console.error('❌ Failed to award bonus points:', bonusError);
-                throw bonusError;
-              }
-              console.log('✅ Bonus points awarded successfully');
-            } else {
-              console.log('ℹ️ No points to award (link has 0 points)');
-            }
-          }
-        } catch (linkProcessingError) {
-          console.error('❌ Error processing registration link:', linkProcessingError);
-          // Don't throw here - user registration should still succeed even if bonus points fail
-        }
-      }
+      console.log('ℹ️ Registration link processing is handled automatically by database trigger');
 
       return { data, error: null };
 
