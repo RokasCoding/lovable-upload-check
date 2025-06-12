@@ -122,6 +122,8 @@ const Admin: React.FC = () => {
 
   const [selectedRegistrationLinkId, setSelectedRegistrationLinkId] = useState('');
 
+  const [domainName, setDomainName] = useState('');
+
   const isAdmin = user?.user_metadata.role === 'admin';
 
   useEffect(() => {
@@ -174,6 +176,22 @@ const Admin: React.FC = () => {
 
     fetchRegistrationLinks();
   }, [toast]);
+
+  useEffect(() => {
+    const fetchDomainName = async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'domain_name')
+        .single();
+      if (!error && data?.setting_value) {
+        setDomainName(data.setting_value.replace(/\/$/, ''));
+      } else {
+        setDomainName(window.location.origin);
+      }
+    };
+    fetchDomainName();
+  }, []);
 
   const handleInviteUser = async () => {
     if (!inviteName.trim() || !inviteEmail.trim()) {
@@ -716,59 +734,65 @@ const Admin: React.FC = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Sukurta</TableHead>
-                          <TableHead>Nuoroda</TableHead>
+                          <TableHead>Pilna Nuoroda</TableHead>
                           <TableHead>Būsena</TableHead>
                           <TableHead>Panaudota</TableHead>
+                          <TableHead>Registracijos</TableHead>
                           <TableHead>Veiksmai</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {registrationLinks.map((link) => (
-                          <TableRow key={link.id}>
-                            <TableCell>
-                              {new Date(link.created_at).toLocaleString('lt-LT')}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                className="h-auto p-0 font-mono"
-                                onClick={() => {
-                                  const url = `${window.location.origin}/register?token=${link.link_token}`;
-                                  navigator.clipboard.writeText(url);
-                                  toast({
-                                    title: 'Nukopijuota',
-                                    description: 'Nuoroda nukopijuota į iškarpinę',
-                                  });
-                                }}
-                              >
-                                {link.link_token}
-                              </Button>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={link.is_active ? 'default' : 'secondary'}>
-                                {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {link.used_at ? (
-                                new Date(link.used_at).toLocaleString('lt-LT')
-                              ) : (
-                                'Nepanaudota'
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {link.is_active && !link.used_at && (
+                        {registrationLinks.map((link) => {
+                          const fullUrl = `${domainName}/register?token=${link.link_token}`;
+                          return (
+                            <TableRow key={link.id}>
+                              <TableCell>
+                                {new Date(link.created_at).toLocaleString('lt-LT')}
+                              </TableCell>
+                              <TableCell>
                                 <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => deactivateRegistrationLink(link.id)}
+                                  variant="ghost"
+                                  className="h-auto p-0 font-mono"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(fullUrl);
+                                    toast({
+                                      title: 'Nukopijuota',
+                                      description: 'Pilna nuoroda nukopijuota į iškarpinę',
+                                    });
+                                  }}
                                 >
-                                  Deaktyvuoti
+                                  {fullUrl}
                                 </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={link.is_active ? 'default' : 'secondary'}>
+                                  {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {link.used_at ? (
+                                  new Date(link.used_at).toLocaleString('lt-LT')
+                                ) : (
+                                  'Nepanaudota'
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {link.used_by ? 1 : 0}
+                              </TableCell>
+                              <TableCell>
+                                {link.is_active && !link.used_at && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deactivateRegistrationLink(link.id)}
+                                  >
+                                    Deaktyvuoti
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
