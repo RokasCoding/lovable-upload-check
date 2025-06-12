@@ -59,15 +59,25 @@ const Register: React.FC = () => {
       }
 
       try {
+        // Debug logging
+        console.log('Validation parameters:', {
+          linkToken,
+          invitedEmail,
+          decodedEmail: invitedEmail ? decodeURIComponent(invitedEmail) : null
+        });
+
         // Validate the registration link with email if provided
         const { data, error } = await supabase
           .rpc('validate_registration_link', { 
             token_param: linkToken,
-            email_param: invitedEmail || null
+            email_param: invitedEmail ? decodeURIComponent(invitedEmail) : null
           });
 
+        console.log('Validation result:', { data, error });
+
         if (error || !data) {
-          throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
+          console.error('Validation failed:', error);
+          throw new Error(error?.message || 'Netinkama arba nebegaliojanti registracijos nuoroda');
         }
 
         setIsValidLink(true);
