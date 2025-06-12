@@ -369,7 +369,7 @@ export const getStats = async (): Promise<Stats> => {
   const [usersResult, entriesResult, prizesResult, redemptionsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, name, total_points'),
+      .select('id, name, total_points, role'),
     supabase
       .from('bonus_entries')
       .select('points_awarded'),
@@ -386,14 +386,16 @@ export const getStats = async (): Promise<Stats> => {
   if (prizesResult.error) throw prizesResult.error;
   if (redemptionsResult.error) throw redemptionsResult.error;
 
-  const totalUsers = usersResult.data.length;
-  const totalPoints = entriesResult.data.reduce((sum, entry) => sum + entry.points_awarded, 0);
+  // Only count non-admin users for stats
+  const nonAdminUsers = usersResult.data.filter(user => user.role !== 'admin');
+  const totalUsers = nonAdminUsers.length;
+  const totalPoints = nonAdminUsers.reduce((sum, user) => sum + (user.total_points || 0), 0);
   const totalPrizes = prizesResult.data.length;
   const totalRedemptions = redemptionsResult.data.filter(r => r.status === 'approved').length;
   const averagePoints = totalUsers > 0 ? Math.round(totalPoints / totalUsers) : 0;
 
-  const topUsers = usersResult.data
-    .filter(user => user.name) // Filter out users without names
+  const topUsers = nonAdminUsers
+    .filter(user => user.name)
     .sort((a, b) => b.total_points - a.total_points)
     .slice(0, 5)
     .map(user => ({

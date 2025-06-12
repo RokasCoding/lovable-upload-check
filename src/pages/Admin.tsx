@@ -124,6 +124,8 @@ const Admin: React.FC = () => {
 
   const [domainName, setDomainName] = useState('');
 
+  const [registrationUsages, setRegistrationUsages] = useState<Record<string, number>>({});
+
   const isAdmin = user?.user_metadata.role === 'admin';
 
   useEffect(() => {
@@ -192,6 +194,22 @@ const Admin: React.FC = () => {
     };
     fetchDomainName();
   }, []);
+
+  useEffect(() => {
+    const fetchRegistrationUsages = async () => {
+      const { data, error } = await supabase
+        .from('registration_link_usages')
+        .select('link_id');
+      if (!error && data) {
+        const usageCount: Record<string, number> = {};
+        data.forEach((row: { link_id: string }) => {
+          usageCount[row.link_id] = (usageCount[row.link_id] || 0) + 1;
+        });
+        setRegistrationUsages(usageCount);
+      }
+    };
+    fetchRegistrationUsages();
+  }, [registrationLinks]);
 
   const handleInviteUser = async () => {
     if (!inviteName.trim() || !inviteEmail.trim()) {
@@ -736,7 +754,6 @@ const Admin: React.FC = () => {
                           <TableHead>Sukurta</TableHead>
                           <TableHead>Pilna Nuoroda</TableHead>
                           <TableHead>Būsena</TableHead>
-                          <TableHead>Panaudota</TableHead>
                           <TableHead>Registracijos</TableHead>
                           <TableHead>Veiksmai</TableHead>
                         </TableRow>
@@ -744,6 +761,7 @@ const Admin: React.FC = () => {
                       <TableBody>
                         {registrationLinks.map((link) => {
                           const fullUrl = `${domainName}/register?token=${link.link_token}`;
+                          const usageCount = registrationUsages[link.id] || 0;
                           return (
                             <TableRow key={link.id}>
                               <TableCell>
@@ -770,17 +788,10 @@ const Admin: React.FC = () => {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {link.used_at ? (
-                                  new Date(link.used_at).toLocaleString('lt-LT')
-                                ) : (
-                                  'Nepanaudota'
-                                )}
+                                {usageCount}
                               </TableCell>
                               <TableCell>
-                                {link.used_by ? 1 : 0}
-                              </TableCell>
-                              <TableCell>
-                                {link.is_active && !link.used_at && (
+                                {link.is_active && (
                                   <Button
                                     variant="destructive"
                                     size="sm"

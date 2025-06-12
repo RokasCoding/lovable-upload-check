@@ -70,6 +70,21 @@ export const AuthService = {
             used_by: data.user.id
           })
           .eq('link_token', metadata.linkToken);
+        // Insert into registration_link_usages
+        const { data: linkRow } = await supabase
+          .from('registration_links')
+          .select('id')
+          .eq('link_token', metadata.linkToken)
+          .single();
+        if (linkRow) {
+          await supabase
+            .from('registration_link_usages')
+            .insert({
+              link_id: linkRow.id,
+              user_id: data.user.id,
+              used_at: new Date().toISOString(),
+            });
+        }
       }
 
       return { data, error: null };

@@ -24,15 +24,6 @@ export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
     points: user.points,
   })) || [];
 
-  // Debug logging
-  React.useEffect(() => {
-    if (stats && !isLoading) {
-      console.log('AdminStats - Current stats:', stats);
-      console.log('AdminStats - topUsers data:', stats.topUsers);
-      console.log('AdminStats - userPointsData:', userPointsData);
-    }
-  }, [stats, isLoading, userPointsData]);
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">

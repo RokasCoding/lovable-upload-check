@@ -84,7 +84,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="point-badge !text-blue-700 dark:!text-blue-300">{user.totalPoints || 0}</span>
+                      {user.role === 'admin' ? '-' : <span className="point-badge !text-blue-700 dark:!text-blue-300">{user.totalPoints || 0}</span>}
                     </TableCell>
                     <TableCell className="text-foreground">
                       {user.createdAt ? format(new Date(user.createdAt), 'yyyy-MM-dd') : '-'}
