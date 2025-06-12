@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminPrizesProps {
   prizes: Prize[];
@@ -56,6 +57,9 @@ export const AdminPrizes: React.FC<AdminPrizesProps> = ({
   const [editPoints, setEditPoints] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
+
+  const { user } = useAuth ? useAuth() : { user: null };
+  const isAdmin = user?.user_metadata?.role === 'admin';
 
   const handleEditPrize = (prize: Prize) => {
     setSelectedPrize(prize);
@@ -251,7 +255,7 @@ export const AdminPrizes: React.FC<AdminPrizesProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="point-badge">{prize.points}</span>
+                      {!isAdmin && <span className="point-badge">{prize.points}</span>}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">

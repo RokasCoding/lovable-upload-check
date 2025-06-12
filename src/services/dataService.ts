@@ -124,9 +124,12 @@ export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]
 };
 
 export const createRedemption = async (userId: string, prizeId: string): Promise<PrizeRedemption> => {
+  const user = await getUserById(userId);
+  if (user.role === 'admin') {
+    throw new Error('Administratoriui negalima keisti prizų');
+  }
   console.log('createRedemption called with:', { userId, prizeId });
   
-  const user = await getUserById(userId);
   const prize = await getPrizeById(prizeId);
 
   console.log('User data:', user);
@@ -188,9 +191,12 @@ export const getStats = async (): Promise<Stats> => {
 
 // Point deduction function
 export const deductPoints = async (userId: string, points: number, reason: string): Promise<boolean> => {
+  const user = await supabaseService.getUserById(userId);
+  if (user.role === 'admin') {
+    throw new Error('Negalima atimti taškų iš administratoriaus');
+  }
   await delay(400);
   
-  const user = await supabaseService.getUserById(userId);
   if (!user || user.totalPoints < points) {
     throw new Error('User does not have enough points');
   }

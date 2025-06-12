@@ -19,6 +19,7 @@ const Prizes: React.FC = () => {
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isAdmin = user?.user_metadata?.role === 'admin';
 
   useEffect(() => {
     const fetchPrizes = async () => {
@@ -142,62 +143,63 @@ const Prizes: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {prizes.map((prize) => {
-              const canAfford = userPoints >= prize.points;
-              
-              return (
-                <Card 
-                  key={prize.id} 
-                  className={`bg-background border-border hover-scale ${!canAfford ? 'opacity-70' : ''}`}
-                >
-                  <CardHeader>
-                    <div className="h-32 w-full overflow-hidden rounded-md mb-2 flex items-center justify-center bg-muted">
-                      {prize.imageUrl ? (
-                        <img 
-                          src={prize.imageUrl} 
-                          alt={prize.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full w-full bg-muted text-muted-foreground">
-                          Nėra nuotraukos
-                        </div>
-                      )}
+            {prizes.map((prize) => (
+              <Card key={prize.id}>
+                <CardHeader>
+                  <CardTitle>{prize.name}</CardTitle>
+                  <CardDescription>{prize.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {prize.imageUrl && (
+                    <img src={prize.imageUrl} alt={prize.name} className="w-full h-40 object-cover rounded mb-2" />
+                  )}
+                  {!isAdmin && (
+                    <div className="mb-2">
+                      <span className="font-semibold">Taškų kaina: </span>
+                      <span className="point-badge">{prize.points}</span>
                     </div>
-                    <CardTitle className="text-foreground">{prize.name}</CardTitle>
-                    <CardDescription className="text-muted-foreground">{prize.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-muted-foreground">Taškų kaina:</div>
-                      <div className="point-badge">{prize.points} taškų</div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className={`w-full ${canAfford ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-                      onClick={() => canAfford && handlePrizeSelect(prize)}
-                      disabled={!canAfford || isLoadingUserPoints}
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between items-center">
+                  {!isAdmin ? (
+                    <Button
+                      onClick={() => {
+                        setSelectedPrize(prize);
+                        setIsDialogOpen(true);
+                      }}
+                      disabled={userPoints < prize.points}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      {canAfford ? 'Iškeisti prizą' : 'Nepakankamai taškų'}
+                      Iškeisti prizą
                     </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedPrize(prize);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      Redaguoti prizą
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
           </div>
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-background text-foreground border-border">
             <DialogHeader>
-              <DialogTitle>Patvirtinti prizo iškeitimą</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Ar tikrai norite iškeisti šį prizą? Ši užklausa turės būti patvirtinta administratoriaus.
-              </DialogDescription>
+              <DialogTitle>{isAdmin ? 'Redaguoti prizą' : 'Patvirtinti prizo iškeitimą'}</DialogTitle>
+              {!isAdmin && (
+                <DialogDescription className="text-muted-foreground">
+                  Ar tikrai norite iškeisti šį prizą? Ši užklausa turės būti patvirtinta administratoriaus.
+                </DialogDescription>
+              )}
             </DialogHeader>
-            
-            {selectedPrize && (
+            {selectedPrize && !isAdmin && (
               <div className="space-y-4 py-4">
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted">
@@ -214,12 +216,10 @@ const Prizes: React.FC = () => {
                     <p className="text-sm text-muted-foreground">{selectedPrize.description}</p>
                   </div>
                 </div>
-                
                 <div className="flex justify-between items-center pt-2 border-t border-border">
                   <span className="text-sm text-muted-foreground">Kaina:</span>
                   <span className="point-badge">{selectedPrize.points} taškų</span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Jūsų likutis po iškeitimo:</span>
                   <span className="font-medium text-primary">
@@ -228,7 +228,6 @@ const Prizes: React.FC = () => {
                 </div>
               </div>
             )}
-            
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="outline"
@@ -237,13 +236,15 @@ const Prizes: React.FC = () => {
               >
                 Atšaukti
               </Button>
-              <Button 
-                onClick={handleRedemption} 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Apdorojama...' : 'Patvirtinti iškeitimą'}
-              </Button>
+              {!isAdmin && (
+                <Button 
+                  onClick={handleRedemption} 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Apdorojama...' : 'Patvirtinti iškeitimą'}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

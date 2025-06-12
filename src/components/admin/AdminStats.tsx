@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Users, Gift, Award, TrendingUp } from 'lucide-react';
 import { Stats } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminStatsProps {
   stats: Stats | null;
@@ -13,6 +14,9 @@ interface AdminStatsProps {
 const COLORS = ['#3535FF', '#5A5AFF', '#7A7AFF', '#9A9AFF', '#BABEFF'];
 
 export const AdminStats: React.FC<AdminStatsProps> = ({ stats, isLoading }) => {
+  const { user } = useAuth ? useAuth() : { user: null };
+  const isAdmin = user?.user_metadata?.role === 'admin';
+
   // Format data for charts
   const prizeDistributionData = stats?.popularPrizes.map(prize => ({
     name: prize.name,
