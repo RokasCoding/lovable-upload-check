@@ -211,40 +211,4 @@ export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: s
       error: error.message || 'Nepavyko išsiųsti el. laiško' 
     };
   }
-};
-
-export const sendUserPrizeStatusNotification = async (
-  userEmail: string,
-  userName: string,
-  prizeName: string,
-  status: 'confirmed' | 'rejected',
-  redemptionId: string,
-  rejectionReason?: string,
-  adminMessage?: string
-): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('send-user-prize-status-notification', {
-      body: {
-        userEmail,
-        userName,
-        prizeName,
-        status,
-        redemptionId,
-        rejectionReason,
-        adminMessage
-      }
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    if (!data.success) {
-      return { success: false, error: data.error };
-    }
-
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message || 'Unknown error' };
-  }
 }; 

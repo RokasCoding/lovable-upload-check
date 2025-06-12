@@ -17,7 +17,6 @@ import {
   getAllPrizes
 } from '@/services/dataService';
 import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
-import { sendUserPrizeStatusNotification } from '@/lib/email';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
