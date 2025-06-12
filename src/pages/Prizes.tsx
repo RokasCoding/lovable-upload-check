@@ -162,7 +162,7 @@ const Prizes: React.FC = () => {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="flex justify-between items-center">
+                <CardFooter className="flex justify-between items-center min-h-[48px]">
                   {!isAdmin ? (
                     <Button
                       onClick={() => {
@@ -174,7 +174,9 @@ const Prizes: React.FC = () => {
                     >
                       Iškeisti prizą
                     </Button>
-                  ) : null}
+                  ) : (
+                    <div />
+                  )}
                 </CardFooter>
               </Card>
             ))}
