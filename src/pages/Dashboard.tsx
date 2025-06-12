@@ -18,6 +18,8 @@ const Dashboard: React.FC = () => {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const isAdmin = user?.user_metadata?.role === 'admin';
+
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
@@ -63,52 +65,54 @@ const Dashboard: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           {/* Points summary card */}
-          <Card className="flex-1 bg-background border-border animate-fade-in">
-            <CardHeader>
-              <CardTitle className="text-foreground">
-                {isLoadingUser ? (
-                  <Skeleton className="h-6 w-48 bg-muted" />
-                ) : (
-                  `Sveiki, ${currentUser?.name || user?.user_metadata.name || 'Naudotojau'}!`
-                )}
-              </CardTitle>
-              <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center flex-col">
-                <div className="text-5xl font-bold mb-2">
+          {!isAdmin && (
+            <Card className="flex-1 bg-background border-border animate-fade-in">
+              <CardHeader>
+                <CardTitle className="text-foreground">
                   {isLoadingUser ? (
-                    <Skeleton className="h-12 w-24 bg-muted" />
+                    <Skeleton className="h-6 w-48 bg-muted" />
                   ) : (
-                    <span className="point-badge text-4xl !text-blue-700 dark:!text-blue-300">{totalPoints}</span>
+                    `Sveiki, ${currentUser?.name || user?.user_metadata.name || 'Naudotojau'}!`
                   )}
+                </CardTitle>
+                <CardDescription>Dabartinis likutis ir suvestinė</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center flex-col">
+                  <div className="text-5xl font-bold mb-2">
+                    {isLoadingUser ? (
+                      <Skeleton className="h-12 w-24 bg-muted" />
+                    ) : (
+                      <span className="point-badge text-4xl !text-blue-700 dark:!text-blue-300">{totalPoints}</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
                 </div>
-                <div className="text-sm text-muted-foreground">Iš viso turimų taškų</div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t border-border flex justify-between">
-              <div className="text-sm text-muted-foreground">
-                <span className="font-medium">
-                  {isLoading ? (
-                    <Skeleton className="h-5 w-16 inline-block bg-muted" />
-                  ) : (
-                    bonusEntries.length
-                  )}
-                </span>{" "}
-                baigti kursai
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-medium">
-                  {isLoading ? (
-                    <Skeleton className="h-5 w-16 inline-block bg-muted" />
-                  ) : (
-                    earnedPoints
-                  )}
-                </span>{" "}
-                uždirbti taškai
-              </div>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter className="border-t border-border flex justify-between">
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium">
+                    {isLoading ? (
+                      <Skeleton className="h-5 w-16 inline-block bg-muted" />
+                    ) : (
+                      bonusEntries.length
+                    )}
+                  </span>{" "}
+                  baigti kursai
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium">
+                    {isLoading ? (
+                      <Skeleton className="h-5 w-16 inline-block bg-muted" />
+                    ) : (
+                      earnedPoints
+                    )}
+                  </span>{" "}
+                  uždirbti taškai
+                </div>
+              </CardFooter>
+            </Card>
+          )}
 
           {/* Quick actions card */}
           <Card className="flex-1 bg-background border-border animate-fade-in">

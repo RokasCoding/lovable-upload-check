@@ -113,14 +113,16 @@ const Prizes: React.FC = () => {
             <h1 className="text-3xl font-bold text-foreground">Galimi prizai</h1>
             <p className="text-muted-foreground mt-1">Iškeiskite savo premijos taškus į šiuos prizus</p>
           </div>
-          <div className="bg-muted px-4 py-2 rounded-md">
-            <span className="text-sm text-foreground">Jūsų taškai:</span>
-            {isLoadingUserPoints ? (
-              <Skeleton className="ml-2 h-5 w-12 inline-block bg-muted-foreground/20" />
-            ) : (
-              <span className="ml-2 font-bold text-primary">{userPoints}</span>
-            )}
-          </div>
+          {!isAdmin && (
+            <div className="bg-muted px-4 py-2 rounded-md">
+              <span className="text-sm text-foreground">Jūsų taškai:</span>
+              {isLoadingUserPoints ? (
+                <Skeleton className="ml-2 h-5 w-12 inline-block bg-muted-foreground/20" />
+              ) : (
+                <span className="ml-2 font-bold text-primary">{userPoints}</span>
+              )}
+            </div>
+          )}
         </div>
         
         {isLoading ? (
@@ -172,17 +174,7 @@ const Prizes: React.FC = () => {
                     >
                       Iškeisti prizą
                     </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedPrize(prize);
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      Redaguoti prizą
-                    </Button>
-                  )}
+                  ) : null}
                 </CardFooter>
               </Card>
             ))}
@@ -192,11 +184,13 @@ const Prizes: React.FC = () => {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-background text-foreground border-border">
             <DialogHeader>
-              <DialogTitle>{isAdmin ? 'Redaguoti prizą' : 'Patvirtinti prizo iškeitimą'}</DialogTitle>
               {!isAdmin && (
-                <DialogDescription className="text-muted-foreground">
-                  Ar tikrai norite iškeisti šį prizą? Ši užklausa turės būti patvirtinta administratoriaus.
-                </DialogDescription>
+                <>
+                  <DialogTitle>Patvirtinti prizo iškeitimą</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Ar tikrai norite iškeisti šį prizą? Ši užklausa turės būti patvirtinta administratoriaus.
+                  </DialogDescription>
+                </>
               )}
             </DialogHeader>
             {selectedPrize && !isAdmin && (
@@ -229,21 +223,23 @@ const Prizes: React.FC = () => {
               </div>
             )}
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-                className="border-border text-foreground hover:bg-muted"
-              >
-                Atšaukti
-              </Button>
               {!isAdmin && (
-                <Button 
-                  onClick={handleRedemption} 
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Apdorojama...' : 'Patvirtinti iškeitimą'}
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    className="border-border text-foreground hover:bg-muted"
+                  >
+                    Atšaukti
+                  </Button>
+                  <Button 
+                    onClick={handleRedemption} 
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Apdorojama...' : 'Patvirtinti iškeitimą'}
+                  </Button>
+                </>
               )}
             </DialogFooter>
           </DialogContent>
