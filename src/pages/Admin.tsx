@@ -752,7 +752,7 @@ const Admin: React.FC = () => {
                           <TableHead>Sukurta</TableHead>
                           <TableHead>Pilna Nuoroda</TableHead>
                           <TableHead>Būsena</TableHead>
-                          <TableHead>Registracijos</TableHead>
+                          <TableHead>Taškai</TableHead>
                           <TableHead>Veiksmai</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -786,7 +786,7 @@ const Admin: React.FC = () => {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {usageCount}
+                                <span className="point-badge">{link.points} taškų</span>
                               </TableCell>
                               <TableCell>
                                 {link.is_active && (
