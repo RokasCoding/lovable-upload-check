@@ -108,7 +108,7 @@ const Prizes: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 bg-[#2D2D35] rounded-lg px-6 py-5">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Galimi prizai</h1>
             <p className="text-muted-foreground mt-1">Iškeiskite savo premijos taškus į šiuos prizus</p>
@@ -146,23 +146,23 @@ const Prizes: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prizes.map((prize) => (
-              <Card key={prize.id}>
-                <CardHeader>
-                  <CardTitle>{prize.name}</CardTitle>
-                  <CardDescription>{prize.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
+              <Card key={prize.id} className="h-[420px] flex flex-col justify-between">
+                <div>
                   {prize.imageUrl && (
-                    <img src={prize.imageUrl} alt={prize.name} className="w-full h-40 object-cover rounded mb-2" />
+                    <img src={prize.imageUrl} alt={prize.name} className="w-full h-40 object-cover rounded-t mb-2" />
                   )}
-                  {!isAdmin && (
-                    <div className="mb-2">
-                      <span className="font-semibold">Taškų kaina: </span>
-                      <span className="point-badge">{prize.points}</span>
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter className="flex justify-between items-center min-h-[48px]">
+                  <div className="px-6 pt-2 pb-0">
+                    <CardTitle className="text-lg font-bold mb-1">{prize.name}</CardTitle>
+                    <CardDescription className="line-clamp-2 mb-2 min-h-[40px]">{prize.description}</CardDescription>
+                    {!isAdmin && (
+                      <div className="mb-2">
+                        <span className="font-semibold">Taškų kaina: </span>
+                        <span className="point-badge">{prize.points}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <CardFooter className="flex justify-between items-center min-h-[48px] mt-auto">
                   {!isAdmin ? (
                     <Button
                       onClick={() => {
