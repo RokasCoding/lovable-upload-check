@@ -137,6 +137,22 @@ export const sendPrizeRedemptionEmail = async (
   redemptionId: string
 ) => {
   try {
+    console.log('About to call send-prize-notification-emailjs edge function with:', {
+      adminEmail,
+      userName,
+      userEmail,
+      prizeName,
+      redemptionId
+    });
+
+    // Check if user is authenticated
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    console.log('Current auth state:', { 
+      user: authData?.user?.id, 
+      email: authData?.user?.email,
+      authError 
+    });
+
     const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
       body: {
         adminEmail: adminEmail,
@@ -147,9 +163,11 @@ export const sendPrizeRedemptionEmail = async (
       }
     });
 
+    console.log('Edge function response:', { emailResult, emailError });
+
     if (emailError) {
       console.error('Failed to send prize notification email:', emailError);
-      return { success: false, error: emailError.message };
+      return { success: false, error: `Edge function error: ${emailError.message}` };
     }
 
     if (emailResult?.success) {
@@ -157,12 +175,14 @@ export const sendPrizeRedemptionEmail = async (
       return { success: true };
     }
 
-    return { success: false, error: 'Unknown error sending email' };
+    // If we get here, there was no error but also no success
+    console.error('Edge function returned unexpected result:', emailResult);
+    return { success: false, error: emailResult?.error || 'Unknown error sending email' };
   } catch (error: any) {
     console.error('Failed to send prize notification email:', error);
     return { 
       success: false, 
-      error: error.message || 'Nepavyko išsiųsti el. laiško' 
+      error: `Exception: ${error.message || 'Nepavyko išsiųsti el. laiško'}` 
     };
   }
 };
@@ -271,5 +291,90 @@ export const testEmailSending = async (email: string) => {
   } catch (error: any) {
     console.error('Error sending test email:', error);
     return { error: error.message || 'Nepavyko išsiųsti el. laiško' };
+  }
+};
+
+export const testPrizeNotificationEmail = async (adminEmail: string) => {
+  try {
+    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
+      body: {
+        adminEmail: adminEmail,
+        userName: 'Test User',
+        userEmail: 'test@example.com',
+        prizeName: 'Test Prize',
+        redemptionId: 'test-redemption-123'
+      }
+    });
+
+    if (emailError) {
+      console.error('Failed to send test prize notification email:', emailError);
+      return { success: false, error: emailError.message };
+    }
+
+    if (emailResult?.success) {
+      console.log('Test prize notification email sent successfully via edge function');
+      return { success: true };
+    }
+
+    return { success: false, error: 'Unknown error sending test email' };
+  } catch (error: any) {
+    console.error('Failed to send test prize notification email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Nepavyko išsiųsti testinio el. laiško' 
+    };
+  }
+};
+
+export const testPrizeNotificationEmailDirect = async (adminEmail: string) => {
+  try {
+    // Get the current user session to include auth headers
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    console.log('Testing direct HTTP call to edge function with headers:', headers);
+
+    const response = await fetch('https://gvitpmixijacetppzusx.supabase.co/functions/v1/send-prize-notification-emailjs', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        adminEmail: adminEmail,
+        userName: 'Direct Test User',
+        userEmail: 'directtest@example.com',
+        prizeName: 'Direct Test Prize',
+        redemptionId: 'direct-test-123'
+      })
+    });
+
+    const responseText = await response.text();
+    console.log('Direct HTTP response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseText
+    });
+
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: `HTTP ${response.status}: ${responseText}` 
+      };
+    }
+
+    const result = JSON.parse(responseText);
+    return result;
+  } catch (error: any) {
+    console.error('Direct HTTP test failed:', error);
+    return { 
+      success: false, 
+      error: `Direct test error: ${error.message}` 
+    };
   }
 }; 

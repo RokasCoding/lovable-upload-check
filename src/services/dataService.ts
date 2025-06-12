@@ -139,8 +139,13 @@ export const getRedemptions = async (userId?: string): Promise<PrizeRedemption[]
 };
 
 export const createRedemption = async (userId: string, prizeId: string): Promise<PrizeRedemption> => {
+  console.log('createRedemption called with:', { userId, prizeId });
+  
   const user = await getUserById(userId);
   const prize = await getPrizeById(prizeId);
+
+  console.log('User data:', user);
+  console.log('Prize data:', prize);
 
   if (!user || !prize) {
     throw new Error('User or prize not found');
@@ -175,19 +180,51 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
     .select('email')
     .eq('role', 'admin');
 
-  if (!adminError && adminUsers) {
+  console.log('Found admin users:', adminUsers, 'Error:', adminError);
+
+  if (!adminError && adminUsers && adminUsers.length > 0) {
+    console.log(`Sending prize redemption emails to ${adminUsers.length} admin(s)`);
+    
     // Send notifications to all admin users (each email function will check individual settings)
-    await Promise.all(
-      adminUsers.map(admin => 
-        sendPrizeRedemptionEmail(
+    const emailPromises = adminUsers.map(async (admin) => {
+      try {
+        console.log(`Sending email to admin: ${admin.email}`);
+        const result = await sendPrizeRedemptionEmail(
           admin.email,
           user.name,
           user.email,
           prize.name,
           redemption.id
-        )
-      )
-    );
+        );
+        console.log(`Email result for ${admin.email}:`, result);
+        return result;
+      } catch (error) {
+        console.error(`Failed to send email to admin ${admin.email}:`, error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    try {
+      const emailResults = await Promise.all(emailPromises);
+      console.log('All email results:', emailResults);
+      
+      const failedEmails = emailResults.filter(result => !result.success);
+      if (failedEmails.length > 0) {
+        console.warn('Some emails failed to send:', failedEmails);
+        // Show an alert about email failures (temporary for debugging)
+        alert(`Emails failed: ${JSON.stringify(failedEmails)}`);
+      } else {
+        console.log('All prize redemption emails sent successfully');
+        // Show success alert (temporary for debugging)
+        alert('All prize redemption emails sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending prize redemption emails:', error);
+      alert(`Email error: ${error.message}`);
+      // Don't throw here - redemption should still be created even if emails fail
+    }
+  } else {
+    console.warn('No admin users found or error fetching admin users:', { adminUsers, adminError });
   }
 
   return redemption;

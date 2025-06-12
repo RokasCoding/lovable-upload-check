@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Settings, Bell } from 'lucide-react';
-import { testEmailSending } from '@/lib/email';
+import { testEmailSending, testPrizeNotificationEmail, testPrizeNotificationEmailDirect } from '@/lib/email';
 
 interface NotificationSettings {
   prizeRedemptions: boolean;
@@ -23,6 +23,8 @@ export const AdminSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isTestingPrize, setIsTestingPrize] = useState(false);
+  const [isTestingDirect, setIsTestingDirect] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
     prizeRedemptions: true,
     newUserRegistrations: true,
@@ -112,6 +114,58 @@ export const AdminSettings: React.FC = () => {
     }
   };
 
+  const handleTestPrizeEmail = async () => {
+    if (!user?.email) return;
+    
+    setIsTestingPrize(true);
+    try {
+      const result = await testPrizeNotificationEmail(user.email);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      toast({
+        title: 'Testinis prizo pranešimas išsiųstas',
+        description: 'Patikrinkite savo el. paštą - turėtumėte gauti pranešimą apie testinį prizo iškeitimo prašymą',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Klaida',
+        description: error.message || 'Nepavyko išsiųsti testinio prizo pranešimo',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTestingPrize(false);
+    }
+  };
+
+  const handleTestPrizeEmailDirect = async () => {
+    if (!user?.email) return;
+    
+    setIsTestingDirect(true);
+    try {
+      const result = await testPrizeNotificationEmailDirect(user.email);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      toast({
+        title: 'Direct test successful',
+        description: 'Direct HTTP call to edge function worked! Check console for details.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Direct test failed',
+        description: error.message || 'Direct HTTP test failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTestingDirect(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="bg-white border-gray-200 animate-fade-in">
@@ -151,14 +205,32 @@ export const AdminSettings: React.FC = () => {
               <Mail className="h-5 w-5 text-black" />
               <h3 className="text-lg font-semibold text-black">El. pašto pranešimai</h3>
             </div>
-            <Button
-              onClick={handleTestEmail}
-              disabled={isTesting}
-              variant="outline"
-              className="text-sm"
-            >
-              {isTesting ? 'Siunčiama...' : 'Išbandyti el. paštą'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleTestEmail}
+                disabled={isTesting}
+                variant="outline"
+                className="text-sm"
+              >
+                {isTesting ? 'Siunčiama...' : 'Išbandyti el. paštą'}
+              </Button>
+              <Button
+                onClick={handleTestPrizeEmail}
+                disabled={isTestingPrize}
+                variant="outline"
+                className="text-sm"
+              >
+                {isTestingPrize ? 'Siunčiama...' : 'Testuoti prizo pranešimą'}
+              </Button>
+              <Button
+                onClick={handleTestPrizeEmailDirect}
+                disabled={isTestingDirect}
+                variant="outline"
+                className="text-sm"
+              >
+                {isTestingDirect ? 'Testuojama...' : 'Direct HTTP testas'}
+              </Button>
+            </div>
           </div>
           <p className="text-sm text-gray-600">
             Pasirinkite, apie kokius įvykius norite gauti el. pašto pranešimus
