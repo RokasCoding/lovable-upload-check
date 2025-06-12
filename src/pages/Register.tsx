@@ -28,6 +28,7 @@ const Register: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [isEmailFromInvite, setIsEmailFromInvite] = useState(false);
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -36,9 +37,11 @@ const Register: React.FC = () => {
       return;
     }
 
-    // Validate registration link
+    // Validate registration link and handle email parameter
     const validateLink = async () => {
       const linkToken = searchParams.get('token');
+      const invitedEmail = searchParams.get('email');
+      
       if (!linkToken) {
         toast({
           title: 'Klaida',
@@ -49,12 +52,26 @@ const Register: React.FC = () => {
         return;
       }
 
+      // Pre-fill email if provided in URL
+      if (invitedEmail) {
+        setEmail(decodeURIComponent(invitedEmail));
+        setIsEmailFromInvite(true);
+      }
+
       try {
+        // Validate the registration link with email if provided
         const { data, error } = await supabase
-          .rpc('validate_registration_link', { token_param: linkToken });
+          .rpc('validate_registration_link', { 
+            token_param: linkToken,
+            email_param: invitedEmail || null
+          });
 
         if (error || !data) {
-          throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
+          if (invitedEmail) {
+            throw new Error('Ši registracijos nuoroda skirta kitam el. pašto adresui');
+          } else {
+            throw new Error('Netinkama arba nebegaliojanti registracijos nuoroda');
+          }
         }
 
         setIsValidLink(true);
@@ -91,6 +108,26 @@ const Register: React.FC = () => {
     setIsSubmitting(true);
     try {
       const linkToken = searchParams.get('token');
+      const invitedEmail = searchParams.get('email');
+      
+      // If there's an invited email, verify the user is using the correct email
+      if (invitedEmail && email !== decodeURIComponent(invitedEmail)) {
+        throw new Error('Turite naudoti el. pašto adresą, kuriam buvo išsiųstas pakvietimas');
+      }
+      
+      // Validate the registration link with the email one more time before registration
+      if (invitedEmail) {
+        const { data: isValid, error: validationError } = await supabase
+          .rpc('validate_registration_link', { 
+            token_param: linkToken,
+            email_param: email
+          });
+
+        if (validationError || !isValid) {
+          throw new Error('Ši registracijos nuoroda nėra skirta jūsų el. pašto adresui');
+        }
+      }
+      
       const { data, error } = await AuthService.signUp(email, password, { 
         name,
         phone,
@@ -186,7 +223,14 @@ const Register: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  readOnly={isEmailFromInvite}
+                  className={isEmailFromInvite ? "bg-gray-100 text-gray-600" : ""}
                 />
+                {isEmailFromInvite && (
+                  <p className="text-sm text-blue-600">
+                    ✅ El. paštas užpildytas automatiškai iš pakvietimo
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefono numeris</Label>

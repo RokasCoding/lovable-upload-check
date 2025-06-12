@@ -119,11 +119,11 @@ const Admin: React.FC = () => {
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [selectedUserForDeletion, setSelectedUserForDeletion] = useState<User | null>(null);
 
-  const [selectedRegistrationLinkId, setSelectedRegistrationLinkId] = useState('');
-
   const [domainName, setDomainName] = useState('');
 
   const [registrationUsages, setRegistrationUsages] = useState<Record<string, number>>({});
+
+  const [selectedRegistrationLinkId, setSelectedRegistrationLinkId] = useState('');
 
   const isAdmin = user?.user_metadata.role === 'admin';
 
@@ -249,7 +249,7 @@ const Admin: React.FC = () => {
           // Email was sent successfully
           toast({
             title: "Sėkmė",
-            description: `Pakvietimas sėkmingai išsiųstas el. paštu ${inviteEmail}`,
+            description: `Pakvietimas su ${selectedLink.points} taškais sėkmingai išsiųstas el. paštu ${inviteEmail}`,
           });
         } else {
           // Email failed, show manual link
@@ -854,18 +854,6 @@ const Admin: React.FC = () => {
         setInviteRole={setInviteRole}
         onInviteUser={handleInviteUser}
 
-        newPrizeDialogOpen={newPrizeDialogOpen}
-        setNewPrizeDialogOpen={setNewPrizeDialogOpen}
-        prizeName={prizeName}
-        setPrizeName={setPrizeName}
-        prizeDescription={prizeDescription}
-        setPrizeDescription={setPrizeDescription}
-        prizePoints={prizePoints}
-        setPrizePoints={setPrizePoints}
-        prizeImage={prizeImage}
-        setPrizeImage={setPrizeImage}
-        onCreatePrize={handleCreatePrize}
-
         newBonusDialogOpen={newBonusDialogOpen}
         setNewBonusDialogOpen={setNewBonusDialogOpen}
         bonusUserId={bonusUserId}
@@ -879,6 +867,18 @@ const Admin: React.FC = () => {
         users={users}
         onAddBonus={handleAddBonus}
         onBonusDialogClose={handleBonusDialogClose}
+
+        newPrizeDialogOpen={newPrizeDialogOpen}
+        setNewPrizeDialogOpen={setNewPrizeDialogOpen}
+        prizeName={prizeName}
+        setPrizeName={setPrizeName}
+        prizeDescription={prizeDescription}
+        setPrizeDescription={setPrizeDescription}
+        prizePoints={prizePoints}
+        setPrizePoints={setPrizePoints}
+        prizeImage={prizeImage}
+        setPrizeImage={setPrizeImage}
+        onCreatePrize={handleCreatePrize}
 
         redemptionDialogOpen={redemptionDialogOpen}
         setRedemptionDialogOpen={setRedemptionDialogOpen}

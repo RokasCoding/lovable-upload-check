@@ -39,13 +39,16 @@ export const inviteUser = async (
     if (existingUser) {
       throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
     }
+    
     // Get current user ID for the invitation
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error('Nepavyko nustatyti dabartinio naudotojo');
     }
-    // Generate registration URL from the selected link
-    const registrationUrl = `${window.location.origin}/register?token=${registrationLink.link_token}`;
+    
+    // Generate registration URL with both token and email parameters
+    const registrationUrl = `${window.location.origin}/register?token=${registrationLink.link_token}&email=${encodeURIComponent(email)}`;
+    
     // Try to send email via Edge Function
     let emailSent = false;
     try {
@@ -61,6 +64,7 @@ export const inviteUser = async (
           year: new Date().getFullYear().toString(),
         }
       });
+      
       if (emailError) {
         console.error('Email sending failed:', emailError);
       } else if (emailResult?.success) {
@@ -71,6 +75,7 @@ export const inviteUser = async (
       console.error('Email sending error:', emailError);
       // Don't throw here - we still want to return the registration URL
     }
+    
     return {
       success: true,
       registrationUrl,
@@ -78,14 +83,7 @@ export const inviteUser = async (
     };
   } catch (error: any) {
     console.error('Failed to invite user:', error);
-    const errorMessage = error.message || 'Nepavyko išsiųsti pakvietimo';
-    // Provide more specific error messages
-    if (error.message?.includes('already exists')) {
-      throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
-    } else if (error.message?.includes('invalid email')) {
-      throw new Error('Neteisingas el. pašto formatas');
-    }
-    throw new Error(errorMessage);
+    throw new Error(error.message || 'Failed to invite user');
   }
 };
 
@@ -249,7 +247,7 @@ export const getUserPointHistory = async (userId: string): Promise<BonusEntry[]>
 };
 
 // Registration link functions
-export const createRegistrationLink = async (userId: string, points: number) => {
+export const createRegistrationLink = async (userId: string, points: number, invitedEmail?: string) => {
   try {
     const { data: adminData } = await supabase.auth.getUser();
     const adminUser = adminData.user;
@@ -258,10 +256,11 @@ export const createRegistrationLink = async (userId: string, points: number) => 
       throw new Error('Only admins can create registration links');
     }
     
-    // Pass points to the RPC function
+    // Pass points and email to the RPC function
     const { data, error } = await supabase.rpc('create_registration_link', {
       creator_id: userId,
-      points: points
+      points: points,
+      invited_email: invitedEmail
     });
     
     if (error) throw error;
