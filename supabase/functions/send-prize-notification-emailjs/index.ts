@@ -41,15 +41,43 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Check environment variables
     if (!EMAILJS_SERVICE_ID || !EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !EMAILJS_PRIVATE_KEY) {
+      console.error('Missing EmailJS environment variables:', {
+        EMAILJS_SERVICE_ID: !!EMAILJS_SERVICE_ID,
+        EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID: !!EMAILJS_PRIZE_NOTIFICATION_TEMPLATE_ID,
+        EMAILJS_PUBLIC_KEY: !!EMAILJS_PUBLIC_KEY,
+        EMAILJS_PRIVATE_KEY: !!EMAILJS_PRIVATE_KEY
+      });
       throw new Error('EmailJS environment variables are not set');
     }
 
     const { adminEmail, userName, userEmail, prizeName, redemptionId }: PrizeNotificationRequest = await req.json();
 
+    // Validate all required fields
     if (!adminEmail || !userName || !userEmail || !prizeName || !redemptionId) {
+      console.error('Missing required fields:', {
+        adminEmail: !!adminEmail,
+        userName: !!userName,
+        userEmail: !!userEmail,
+        prizeName: !!prizeName,
+        redemptionId: !!redemptionId
+      });
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: adminEmail, userName, userEmail, prizeName, redemptionId' }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(adminEmail) || !emailRegex.test(userEmail)) {
+      console.error('Invalid email format:', { adminEmail, userEmail });
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
         {
           status: 400,
           headers: corsHeaders
@@ -92,14 +120,20 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Prepare template parameters for EmailJS
+    // Prepare template parameters that match the EmailJS template exactly
     const templateParams = {
-      user_name: userName,
-      user_email: userEmail,
-      prize_name: prizeName,
-      redemption_id: redemptionId,
-      admin_panel_url: 'https://gvitpmixijacetppzusx.supabase.co'
+      to_email: adminEmail,           // Required for EmailJS recipient
+      user_name: userName,            // {{user_name}} in template
+      user_email: userEmail,          // {{user_email}} in template  
+      prize_name: prizeName,          // {{prize_name}} in template
+      redemption_id: redemptionId,    // {{redemption_id}} in template
+      admin_panel_url: 'https://gvitpmixijacetppzusx.supabase.co'  // {{admin_panel_url}} in template
     };
+
+    console.log('Sending prize notification email with params:', {
+      ...templateParams,
+      to_email: adminEmail // Log the recipient for debugging
+    });
 
     // Send email via EmailJS
     const emailPayload = {
@@ -118,11 +152,16 @@ Deno.serve(async (req: Request) => {
 
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
-      console.error('EmailJS API error:', emailResponse.status, errorText);
+      console.error('EmailJS API error:', {
+        status: emailResponse.status,
+        statusText: emailResponse.statusText,
+        error: errorText,
+        payload: emailPayload
+      });
       return new Response(
         JSON.stringify({
           success: false,
-          error: `EmailJS API error: ${emailResponse.status}`
+          error: `EmailJS API error: ${emailResponse.status} ${errorText}`
         }),
         {
           status: 500,
@@ -132,12 +171,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const result = await emailResponse.text();
-    console.log('Prize notification email sent successfully:', result);
+    console.log('Prize notification email sent successfully:', {
+      result,
+      recipient: adminEmail,
+      user: userName,
+      prize: prizeName
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Prize notification email sent successfully'
+        message: 'Prize notification email sent successfully',
+        recipient: adminEmail
       }),
       {
         headers: corsHeaders
