@@ -73,7 +73,7 @@ export const AuthService = {
         // Insert into registration_link_usages
         const { data: linkRow } = await supabase
           .from('registration_links')
-          .select('id')
+          .select('id, points')
           .eq('link_token', metadata.linkToken)
           .single();
         if (linkRow) {
@@ -86,6 +86,18 @@ export const AuthService = {
             });
           if (usageInsertError) {
             console.error('Failed to insert registration_link_usages:', usageInsertError);
+          }
+          // Award bonus points if the link has points > 0
+          if (linkRow.points > 0) {
+            await supabase
+              .from('bonus_entries')
+              .insert({
+                user_id: data.user.id,
+                user_name: metadata.name,
+                course_name: 'Registracija su pakvietimo nuoroda',
+                price: 0,
+                points_awarded: linkRow.points,
+              });
           }
         }
       }

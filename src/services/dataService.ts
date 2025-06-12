@@ -249,7 +249,7 @@ export const getUserPointHistory = async (userId: string): Promise<BonusEntry[]>
 };
 
 // Registration link functions
-export const createRegistrationLink = async (userId: string) => {
+export const createRegistrationLink = async (userId: string, points: number) => {
   try {
     const { data: adminData } = await supabase.auth.getUser();
     const adminUser = adminData.user;
@@ -258,9 +258,10 @@ export const createRegistrationLink = async (userId: string) => {
       throw new Error('Only admins can create registration links');
     }
     
-    // Create the registration link with direct SQL query to bypass RLS
+    // Pass points to the RPC function
     const { data, error } = await supabase.rpc('create_registration_link', {
-      creator_id: userId
+      creator_id: userId,
+      points: points
     });
     
     if (error) throw error;

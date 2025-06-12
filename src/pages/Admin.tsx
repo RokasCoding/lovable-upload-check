@@ -477,14 +477,12 @@ const Admin: React.FC = () => {
     setIsGeneratingLink(true);
     try {
       if (!user) throw new Error('User not authenticated');
-      
-      const data = await createRegistrationLink(user.id);
+      const points = linkType === 'with-points' ? parseInt(linkPoints, 10) || 0 : 0;
+      const data = await createRegistrationLink(user.id, points);
       setRegistrationLinks(prev => [data, ...prev]);
-      
       // Copy link to clipboard
       const link = `${window.location.origin}/register?token=${data.link_token}`;
       await navigator.clipboard.writeText(link);
-
       toast({
         title: 'Nuoroda sugeneruota',
         description: 'Registracijos nuoroda nukopijuota į iškarpinę',
