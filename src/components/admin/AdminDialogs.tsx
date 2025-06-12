@@ -212,6 +212,11 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
               {selectedLink && (
                 <div className="text-sm text-gray-600 mt-1">Ši nuoroda suteiks: <b>{selectedLink.points}</b> taškų</div>
               )}
+              {registrationLinks.filter(l => l.is_active && !l.used_at).length === 0 && (
+                <div className="text-sm text-amber-600 mt-1 p-2 bg-amber-50 rounded border border-amber-200">
+                  ⚠️ Nėra aktyvių registracijos nuorodų. Pirmiausia sukurkite naują registracijos nuorodą.
+                </div>
+              )}
             </div>
           </div>
           
@@ -226,7 +231,7 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
             <Button 
               onClick={onInviteUser} 
               className="bg-vcs-blue hover:bg-vcs-blue/90"
-              disabled={isProcessing}
+              disabled={isProcessing || !selectedRegistrationLinkId || !inviteName.trim() || !inviteEmail.trim()}
             >
               {isProcessing ? 'Siunčiama...' : 'Siųsti Pakvietimą'}
             </Button>

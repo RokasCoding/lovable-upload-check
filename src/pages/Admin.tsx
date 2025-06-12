@@ -277,6 +277,7 @@ const Admin: React.FC = () => {
         setInviteName('');
         setInviteEmail('');
         setInviteRole('user');
+        setSelectedRegistrationLinkId('');
       }
     } catch (error: any) {
       console.error('Nepavyko pakviesti naudotojo:', error);
