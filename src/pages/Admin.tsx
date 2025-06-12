@@ -800,6 +800,33 @@ const Admin: React.FC = () => {
                                     Deaktyvuoti
                                   </Button>
                                 )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="ml-2 text-red-600 border-red-300 hover:bg-red-50"
+                                  onClick={async () => {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('registration_links')
+                                        .delete()
+                                        .eq('id', link.id);
+                                      if (error) throw error;
+                                      setRegistrationLinks(prev => prev.filter(l => l.id !== link.id));
+                                      toast({
+                                        title: 'Nuoroda ištrinta',
+                                        description: 'Registracijos nuoroda pašalinta iš duomenų bazės',
+                                      });
+                                    } catch (error) {
+                                      toast({
+                                        title: 'Klaida',
+                                        description: error.message || 'Nepavyko ištrinti nuorodos',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Ištrinti
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
