@@ -1,12 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-interface InvitationRequest {
-  to: string;
-  name: string;
-  registrationUrl: string;
-  inviterName: string;
-}
+const EMAILJS_SERVICE_ID = Deno.env.get('EMAILJS_SERVICE_ID');
+const EMAILJS_UNIFIED_TEMPLATE_ID = Deno.env.get('EMAILJS_UNIFIED_TEMPLATE_ID');
+const EMAILJS_PUBLIC_KEY = Deno.env.get('EMAILJS_PUBLIC_KEY');
+const EMAILJS_PRIVATE_KEY = Deno.env.get('EMAILJS_PRIVATE_KEY');
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
@@ -35,16 +33,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { to, name, registrationUrl, inviterName }: InvitationRequest = await req.json();
-
-    if (!to || !name || !registrationUrl || !inviterName) {
+    // Accept all variables from the client
+    const payload = await req.json();
+    if (!payload.to_email || !payload.email_type) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: to_email, email_type' }),
         {
           status: 400,
           headers: {
@@ -55,34 +48,27 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Prepare email content
-    const html = `
-      <h2>Pakvietimas prisijungti prie sistemos</h2>
-      <p>Sveiki, ${name}!</p>
-      <p>${inviterName} jus pakviete prisijungti prie mūsų taškų sistemos.</p>
-      <p>Norėdami sukurti paskyrą, spauskite šią nuorodą:</p>
-      <p><a href="${registrationUrl}" style="color: #007bff; text-decoration: none; font-weight: bold;">${registrationUrl}</a></p>
-      <br>
-      <p>Jeigu nuoroda neveikia, nukopijuokite ir įklijuokite ją į naršyklės adreso juostą.</p>
-      <p>Su pagarba,<br>Taškų sistemos komanda</p>
-    `;
+    // Send email via EmailJS
+    const emailPayload = {
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_UNIFIED_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      accessToken: EMAILJS_PRIVATE_KEY,
+      template_params: payload
+    };
 
-    // Send email using the send-email function
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
-      body: {
-        to: to,
-        subject: 'Pakvietimas prisijungti prie taškų sistemos',
-        html: html,
-      }
+    const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
     });
 
-    if (emailError) {
-      console.error('Failed to send invitation email:', emailError);
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to send invitation email',
-          details: emailError.message
+        JSON.stringify({
+          success: false,
+          error: `EmailJS API error: ${emailResponse.status} ${errorText}`
         }),
         {
           status: 500,
@@ -94,14 +80,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log('Invitation email sent successfully');
-    
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         message: 'Invitation email sent successfully',
-        recipient: to,
-        name: name
+        recipient: payload.to_email
       }),
       {
         status: 200,
@@ -111,12 +94,9 @@ Deno.serve(async (req: Request) => {
         },
       }
     );
-
   } catch (error) {
-    console.error('Invitation email error:', error);
-    
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Failed to send invitation email',
         details: error instanceof Error ? error.message : 'Unknown error'
       }),

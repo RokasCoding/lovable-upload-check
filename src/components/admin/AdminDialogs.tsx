@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import { User, PrizeRedemption } from '@/types';
+import { User, PrizeRedemption, RegistrationLink } from '@/types';
 
 interface AdminDialogsProps {
   // Invite User Dialog
@@ -70,6 +70,10 @@ interface AdminDialogsProps {
   onCopyLink: () => void;
 
   isProcessing: boolean;
+
+  registrationLinks: RegistrationLink[];
+  selectedRegistrationLinkId: string;
+  setSelectedRegistrationLinkId: (id: string) => void;
 }
 
 export const AdminDialogs: React.FC<AdminDialogsProps> = ({
@@ -128,6 +132,10 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
   onCopyLink,
 
   isProcessing,
+
+  registrationLinks,
+  selectedRegistrationLinkId,
+  setSelectedRegistrationLinkId,
 }) => {
   const handleBonusDialogClose = () => {
     setNewBonusDialogOpen(false);
@@ -135,6 +143,8 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
       onBonusDialogClose();
     }
   };
+
+  const selectedLink = registrationLinks.find(l => l.id === selectedRegistrationLinkId);
 
   return (
     <>
@@ -183,6 +193,25 @@ export const AdminDialogs: React.FC<AdminDialogsProps> = ({
                   <SelectItem value="admin">Administratorius</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="invite-link">Registracijos nuoroda</Label>
+              <Select value={selectedRegistrationLinkId} onValueChange={setSelectedRegistrationLinkId}>
+                <SelectTrigger className="bg-gray-50 text-black border-gray-300">
+                  <SelectValue placeholder="Pasirinkite nuorodą" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-50 text-black border-gray-300">
+                  {registrationLinks.filter(l => l.is_active && !l.used_at).map(link => (
+                    <SelectItem key={link.id} value={link.id}>
+                      {link.link_token} ({link.points} taškų)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedLink && (
+                <div className="text-sm text-gray-600 mt-1">Ši nuoroda suteiks: <b>{selectedLink.points}</b> taškų</div>
+              )}
             </div>
           </div>
           

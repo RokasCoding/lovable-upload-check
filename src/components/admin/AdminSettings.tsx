@@ -1,350 +1,351 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 import { Mail, Settings, Bell } from 'lucide-react';
-import { testEmailSending, testPrizeNotificationEmail, testPrizeNotificationEmailDirect } from '@/lib/email';
 
 interface NotificationSettings {
-  prizeRedemptions: boolean;
   newUserRegistrations: boolean;
-  pointsDeductions: boolean;
+  prizeRedemptions: boolean;
   systemUpdates: boolean;
+  prizeStatusUpdates: boolean;
+}
+
+interface SystemSettings {
+  domainName: string;
+  companyName: string;
 }
 
 export const AdminSettings: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [isTestingPrize, setIsTestingPrize] = useState(false);
-  const [isTestingDirect, setIsTestingDirect] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
-    prizeRedemptions: true,
     newUserRegistrations: true,
-    pointsDeductions: true,
-    systemUpdates: false,
+    prizeRedemptions: true,
+    systemUpdates: true,
+    prizeStatusUpdates: true,
   });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
+    domainName: '',
+    companyName: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [newEmail, setNewEmail] = useState(user?.email || '');
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   useEffect(() => {
-    const loadSettings = async () => {
-      if (!user) return;
-
-      try {
-        // Try to get existing settings from user metadata
-        const existingSettings = user.user_metadata?.notificationSettings;
-        if (existingSettings) {
-          setSettings(existingSettings);
-        }
-      } catch (error) {
-        console.error('Failed to load notification settings:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadSettings();
+    loadSystemSettings();
+    setNewEmail(user?.email || '');
   }, [user]);
 
-  const handleSettingChange = (setting: keyof NotificationSettings, value: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      [setting]: value
-    }));
+  const loadSettings = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data: userData, error } = await supabase.auth.admin.getUserById(user.id);
+      if (error) throw error;
+
+      const notificationSettings = userData?.user?.user_metadata?.notificationSettings;
+      if (notificationSettings) {
+        setSettings(notificationSettings);
+      }
+    } catch (error) {
+      console.error('Failed to load notification settings:', error);
+    }
+  };
+
+  const loadSystemSettings = async () => {
+    try {
+      const { data: domainData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'domain_name')
+        .single();
+
+      const { data: companyData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'company_name')
+        .single();
+
+      setSystemSettings({
+        domainName: domainData?.setting_value || '',
+        companyName: companyData?.setting_value || 'VCS Taškų Sistema',
+      });
+    } catch (error) {
+      console.error('Failed to load system settings:', error);
+    }
   };
 
   const saveSettings = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
-    setIsSaving(true);
+    setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
+      const { error } = await supabase.auth.admin.updateUserById(user.id, {
+        user_metadata: {
           ...user.user_metadata,
           notificationSettings: settings,
-        }
+        },
       });
 
       if (error) throw error;
 
       toast({
-        title: 'Sėkmė',
-        description: 'Pranešimų nustatymai sėkmingai išsaugoti',
+        title: 'Nustatymai išsaugoti',
+        description: 'Pranešimų nustatymai sėkmingai atnaujinti.',
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Failed to save notification settings:', error);
       toast({
         title: 'Klaida',
-        description: 'Nepavyko išsaugoti nustatymų',
+        description: 'Nepavyko išsaugoti nustatymų.',
         variant: 'destructive',
       });
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const handleTestEmail = async () => {
-    if (!user?.email) return;
-    
-    setIsTesting(true);
+  const saveSystemSettings = async () => {
+    setIsLoading(true);
     try {
-      const result = await testEmailSending(user.email);
-      
-      if (result.error) {
-        throw new Error(result.error);
+      // Validate domain format
+      let domain = systemSettings.domainName.trim();
+      if (domain && !domain.startsWith('http://') && !domain.startsWith('https://')) {
+        domain = 'https://' + domain;
       }
+      domain = domain.replace(/\/$/, ''); // Remove trailing slash
+
+      // Update domain name
+      await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'domain_name',
+          setting_value: domain,
+          updated_by: user?.id,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'setting_key'
+        });
+
+      // Update company name
+      await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'company_name',
+          setting_value: systemSettings.companyName.trim(),
+          updated_by: user?.id,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'setting_key'
+        });
 
       toast({
-        title: 'Testinis el. laiškas išsiųstas',
-        description: 'Patikrinkite savo el. paštą',
+        title: 'Sistemos nustatymai išsaugoti',
+        description: 'Domeno vardas ir įmonės pavadinimas atnaujinti.',
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Failed to save system settings:', error);
       toast({
         title: 'Klaida',
-        description: error.message || 'Nepavyko išsiųsti testinio el. laiško',
+        description: 'Nepavyko išsaugoti sistemos nustatymų.',
         variant: 'destructive',
       });
     } finally {
-      setIsTesting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleTestPrizeEmail = async () => {
-    if (!user?.email) return;
-    
-    setIsTestingPrize(true);
-    try {
-      const result = await testPrizeNotificationEmail(user.email);
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
+  const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
 
-      toast({
-        title: 'Testinis prizo pranešimas išsiųstas',
-        description: 'Patikrinkite savo el. paštą - turėtumėte gauti pranešimą apie testinį prizo iškeitimo prašymą',
+  const handleSystemSettingChange = (key: keyof SystemSettings, value: string) => {
+    setSystemSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleEmailChange = async () => {
+    if (!user?.id || !newEmail || newEmail === user.email) return;
+    setIsEmailLoading(true);
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(user.id, {
+        email: newEmail.trim(),
       });
-    } catch (error: any) {
+      if (error) throw error;
+      toast({
+        title: 'El. paštas atnaujintas',
+        description: 'Jūsų el. pašto adresas sėkmingai atnaujintas.',
+      });
+    } catch (error) {
       toast({
         title: 'Klaida',
-        description: error.message || 'Nepavyko išsiųsti testinio prizo pranešimo',
+        description: error.message || 'Nepavyko atnaujinti el. pašto adreso.',
         variant: 'destructive',
       });
     } finally {
-      setIsTestingPrize(false);
+      setIsEmailLoading(false);
     }
   };
-
-  const handleTestPrizeEmailDirect = async () => {
-    if (!user?.email) return;
-    
-    setIsTestingDirect(true);
-    try {
-      const result = await testPrizeNotificationEmailDirect(user.email);
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      toast({
-        title: 'Direct test successful',
-        description: 'Direct HTTP call to edge function worked! Check console for details.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Direct test failed',
-        description: error.message || 'Direct HTTP test failed',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTestingDirect(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Card className="bg-white border-gray-200 animate-fade-in">
-        <CardHeader>
-          <CardTitle className="text-black flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Administratoriaus Nustatymai
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="h-6 bg-gray-200 rounded animate-pulse" />
-            <div className="h-6 bg-gray-200 rounded animate-pulse" />
-            <div className="h-6 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <Card className="bg-white border-gray-200 animate-fade-in">
-      <CardHeader>
-        <CardTitle className="text-black flex items-center gap-2">
-          <Settings className="h-5 w-5" />
-          Administratoriaus Nustatymai
-        </CardTitle>
-        <CardDescription>
-          Konfigūruokite pranešimų nustatymus ir sistemos preferencijas
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Email Notifications Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-black" />
-              <h3 className="text-lg font-semibold text-black">El. pašto pranešimai</h3>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Sistemos Nustatymai
+          </CardTitle>
+          <CardDescription>
+            Konfigūruokite sistemos parametrus ir domeno nustatymus
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="domain-name">Domeno vardas</Label>
+              <Input
+                id="domain-name"
+                value={systemSettings.domainName}
+                onChange={(e) => handleSystemSettingChange('domainName', e.target.value)}
+                placeholder="https://example.com"
+                className="mt-1"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Šis domenas bus naudojamas el. laiškuose ir nuorodose
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleTestEmail}
-                disabled={isTesting}
-                variant="outline"
-                className="text-sm"
-              >
-                {isTesting ? 'Siunčiama...' : 'Išbandyti el. paštą'}
-              </Button>
-              <Button
-                onClick={handleTestPrizeEmail}
-                disabled={isTestingPrize}
-                variant="outline"
-                className="text-sm"
-              >
-                {isTestingPrize ? 'Siunčiama...' : 'Testuoti prizo pranešimą'}
-              </Button>
-              <Button
-                onClick={handleTestPrizeEmailDirect}
-                disabled={isTestingDirect}
-                variant="outline"
-                className="text-sm"
-              >
-                {isTestingDirect ? 'Testuojama...' : 'Direct HTTP testas'}
-              </Button>
+
+            <div>
+              <Label htmlFor="company-name">Įmonės pavadinimas</Label>
+              <Input
+                id="company-name"
+                value={systemSettings.companyName}
+                onChange={(e) => handleSystemSettingChange('companyName', e.target.value)}
+                placeholder="Jūsų įmonės pavadinimas"
+                className="mt-1"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Pavadinimas rodomas el. laiškuose ir sąsajoje
+              </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600">
-            Pasirinkite, apie kokius įvykius norite gauti el. pašto pranešimus
-          </p>
-          
-          <div className="space-y-4 ml-7">
+
+          <Button onClick={saveSystemSettings} disabled={isLoading}>
+            {isLoading ? 'Išsaugoma...' : 'Išsaugoti sistemos nustatymus'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Pranešimų Nustatymai
+          </CardTitle>
+          <CardDescription>
+            Valdykite, kokius pranešimus norite gauti el. paštu
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="prize-redemptions" className="text-black font-medium">
-                  Prizų išpirkimo prašymai
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Gauti pranešimus, kai naudotojai prašo išpirkti prizus
+                <Label htmlFor="new-users">Nauji naudotojai</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pranešimai apie naujų naudotojų registraciją
+                </p>
+              </div>
+              <Switch
+                id="new-users"
+                checked={settings.newUserRegistrations}
+                onCheckedChange={(checked) => handleSettingChange('newUserRegistrations', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="prize-redemptions">Prizų iškeitimai</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pranešimai apie naujus prizų iškeitimo prašymus
                 </p>
               </div>
               <Switch
                 id="prize-redemptions"
                 checked={settings.prizeRedemptions}
-                onCheckedChange={(value) => handleSettingChange('prizeRedemptions', value)}
+                onCheckedChange={(checked) => handleSettingChange('prizeRedemptions', checked)}
               />
             </div>
 
-            <Separator />
-
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="new-registrations" className="text-black font-medium">
-                  Naujos registracijos
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Gauti pranešimus apie naujus naudotojus
-                </p>
-              </div>
-              <Switch
-                id="new-registrations"
-                checked={settings.newUserRegistrations}
-                onCheckedChange={(value) => handleSettingChange('newUserRegistrations', value)}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="points-deductions" className="text-black font-medium">
-                  Taškų atėmimas
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Gauti pranešimus apie taškų atėmimo veiksmus
-                </p>
-              </div>
-              <Switch
-                id="points-deductions"
-                checked={settings.pointsDeductions}
-                onCheckedChange={(value) => handleSettingChange('pointsDeductions', value)}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="system-updates" className="text-black font-medium">
-                  Sistemos atnaujinimai
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Gauti pranešimus apie sistemos priežiūrą ir atnaujinimus
+                <Label htmlFor="system-updates">Sistemos atnaujinimai</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pranešimai apie svarbius sistemos pakeitimus
                 </p>
               </div>
               <Switch
                 id="system-updates"
                 checked={settings.systemUpdates}
-                onCheckedChange={(value) => handleSettingChange('systemUpdates', value)}
+                onCheckedChange={(checked) => handleSettingChange('systemUpdates', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="prize-status">Prizų statusai</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pranešimai apie naudotojų prizų statusų pakeitimus
+                </p>
+              </div>
+              <Switch
+                id="prize-status"
+                checked={settings.prizeStatusUpdates}
+                onCheckedChange={(checked) => handleSettingChange('prizeStatusUpdates', checked)}
               />
             </div>
           </div>
-        </div>
 
-        <Separator />
-
-        {/* Admin Information */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-black" />
-            <h3 className="text-lg font-semibold text-black">Administratoriaus informacija</h3>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">El. paštas:</span>
-              <span className="text-sm text-black font-medium">{user?.email}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Vardas:</span>
-              <span className="text-sm text-black font-medium">{user?.user_metadata?.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Rolė:</span>
-              <span className="text-sm text-black font-medium">Administratorius</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <div className="pt-4">
-          <Button 
-            onClick={saveSettings} 
-            disabled={isSaving}
-            className="bg-vcs-blue hover:bg-vcs-blue/90 w-full"
-          >
-            {isSaving ? 'Išsaugoma...' : 'Išsaugoti nustatymus'}
+          <Button onClick={saveSettings} disabled={isLoading}>
+            {isLoading ? 'Išsaugoma...' : 'Išsaugoti pranešimų nustatymus'}
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            El. pašto adresas
+          </CardTitle>
+          <CardDescription>
+            Pakeiskite savo administratoriaus el. pašto adresą
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="admin-email">El. paštas</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              placeholder="naujas@email.lt"
+              className="mt-1"
+              autoComplete="email"
+            />
+          </div>
+          <Button onClick={handleEmailChange} disabled={isEmailLoading || !newEmail || newEmail === user?.email}>
+            {isEmailLoading ? 'Atnaujinama...' : 'Atnaujinti el. paštą'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }; 

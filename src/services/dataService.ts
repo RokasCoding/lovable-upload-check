@@ -27,51 +27,39 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
   }
 };
 
-export const inviteUser = async (email: string, name: string, role: 'admin' | 'user'): Promise<{success: boolean, registrationUrl?: string, emailSent?: boolean}> => {
+export const inviteUser = async (
+  email: string,
+  name: string,
+  role: 'admin' | 'user',
+  registrationLink: { link_token: string; points: number }
+): Promise<{success: boolean, registrationUrl?: string, emailSent?: boolean}> => {
   try {
     // Check if user already exists using our secure function
     const existingUser = await supabaseService.getUserByEmail(email);
-
     if (existingUser) {
       throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
     }
-
     // Get current user ID for the invitation
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error('Nepavyko nustatyti dabartinio naudotojo');
     }
-
-    // Create invitation using our secure function
-    const { data: inviteResult, error: inviteError } = await supabase
-      .rpc('invite_user', {
-        inviter_id: user.id,
-        invite_email: email,
-        invite_name: name,
-        invite_role: role
-      });
-
-    if (inviteError) {
-      throw inviteError;
-    }
-
-    // Generate registration URL
-    const registrationUrl = `${window.location.origin}/register?token=${inviteResult.link_token}`;
-    
-    console.log('Registration link created:', registrationUrl);
-
+    // Generate registration URL from the selected link
+    const registrationUrl = `${window.location.origin}/register?token=${registrationLink.link_token}`;
     // Try to send email via Edge Function
     let emailSent = false;
     try {
       const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email-emailjs', {
         body: {
-          to: email,
-          name: name,
-          registrationUrl: registrationUrl,
-          inviterName: user.user_metadata?.name || 'Administratorius'
+          to_email: email,
+          user_name: name,
+          invite_link: registrationUrl,
+          invite_points: registrationLink.points,
+          email_type: 'registration_invite',
+          admin_email: user.email,
+          company_name: 'Vilnius Coding School', // Optionally fetch from settings
         }
       });
-
       if (emailError) {
         console.error('Email sending failed:', emailError);
       } else if (emailResult?.success) {
@@ -82,7 +70,6 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
       console.error('Email sending error:', emailError);
       // Don't throw here - we still want to return the registration URL
     }
-    
     return {
       success: true,
       registrationUrl,
@@ -91,14 +78,12 @@ export const inviteUser = async (email: string, name: string, role: 'admin' | 'u
   } catch (error: any) {
     console.error('Failed to invite user:', error);
     const errorMessage = error.message || 'Nepavyko išsiųsti pakvietimo';
-    
     // Provide more specific error messages
     if (error.message?.includes('already exists')) {
       throw new Error('Naudotojas su šiuo el. paštu jau egzistuoja');
     } else if (error.message?.includes('invalid email')) {
       throw new Error('Neteisingas el. pašto formatas');
     }
-    
     throw new Error(errorMessage);
   }
 };
@@ -179,24 +164,13 @@ export const createRedemption = async (userId: string, prizeId: string): Promise
   
   try {
     const result = await sendPrizeRedemptionEmail(
-      'system', // We'll use 'system' as a trigger for edge function to find all admins
+      'system',
       user.name,
       user.email,
       prize.name,
       redemption.id
     );
-    console.log('Email notification result:', result);
-    
-    if (!result.success) {
-      console.warn('Failed to send email notification:', result.error);
-      alert(`Prize reserved successfully, but email notification failed: ${result.error}`);
-    } else {
-      console.log('Email notification sent successfully');
-      alert('Prize reserved and admin notification sent successfully!');
-    }
   } catch (error) {
-    console.error('Error sending email notification:', error);
-    alert(`Prize reserved successfully, but email notification failed: ${error.message}`);
     // Don't throw here - redemption should still be created even if emails fail
   }
 

@@ -17,6 +17,7 @@ import {
   getAllPrizes
 } from '@/services/dataService';
 import { User, Prize, PrizeRedemption, Stats, BonusEntry } from '@/types';
+import { sendUserPrizeStatusNotification } from '@/lib/email';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ interface RegistrationLink {
   is_active: boolean;
   used_at: string | null;
   used_by: string | null;
+  points: number;
 }
 
 const Admin: React.FC = () => {
@@ -117,6 +119,8 @@ const Admin: React.FC = () => {
   // New state variables for user deletion
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [selectedUserForDeletion, setSelectedUserForDeletion] = useState<User | null>(null);
+
+  const [selectedRegistrationLinkId, setSelectedRegistrationLinkId] = useState('');
 
   const isAdmin = user?.user_metadata.role === 'admin';
 
@@ -192,9 +196,19 @@ const Admin: React.FC = () => {
       return;
     }
     
+    const selectedLink = registrationLinks.find(l => l.id === selectedRegistrationLinkId);
+    if (!selectedLink) {
+      toast({
+        title: 'Klaida',
+        description: 'Pasirinkite registracijos nuorodą',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsProcessing(true);
     try {
-      const result = await inviteUser(inviteEmail, inviteName, inviteRole);
+      const result = await inviteUser(inviteEmail, inviteName, inviteRole, selectedLink);
       if (result.success && result.registrationUrl) {
         if (result.emailSent) {
           // Email was sent successfully
@@ -825,6 +839,9 @@ const Admin: React.FC = () => {
         onCopyLink={() => {}}
 
         isProcessing={isProcessing}
+        registrationLinks={registrationLinks}
+        selectedRegistrationLinkId={selectedRegistrationLinkId}
+        setSelectedRegistrationLinkId={setSelectedRegistrationLinkId}
       />
 
       {/* New Point Deduction Dialog */}

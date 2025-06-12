@@ -175,6 +175,7 @@ export interface Database {
           is_active: boolean
           used_at: string | null
           used_by: string | null
+          points: number
         }
         Insert: {
           id?: string
@@ -184,6 +185,7 @@ export interface Database {
           is_active?: boolean
           used_at?: string | null
           used_by?: string | null
+          points?: number
         }
         Update: {
           id?: string
@@ -193,6 +195,7 @@ export interface Database {
           is_active?: boolean
           used_at?: string | null
           used_by?: string | null
+          points?: number
         }
       }
       invites: {

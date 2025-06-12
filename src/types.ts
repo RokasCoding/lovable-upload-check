@@ -60,3 +60,14 @@ export interface Stats {
     count: number;
   }[];
 }
+
+export interface RegistrationLink {
+  id: string;
+  created_at: string;
+  created_by: string;
+  link_token: string;
+  is_active: boolean;
+  used_at: string | null;
+  used_by: string | null;
+  points: number;
+}

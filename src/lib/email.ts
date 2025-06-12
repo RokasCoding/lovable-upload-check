@@ -1,29 +1,30 @@
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 
 export const sendInviteEmail = async (email: string, name: string, inviteLink: string) => {
   try {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        data: {
-          name,
-          inviteLink,
-          type: 'invite'
-        }
-      }
+    const response = await fetch('/api/send-invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: email,
+        name,
+        inviteLink,
+      }),
     });
 
-    if (error) {
-      console.error('Error sending invite email:', error);
-      return { success: false, error: error.message };
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Nepavyko išsiųsti kvietimo');
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error('Failed to send invite email:', error);
     return { 
       success: false, 
-      error: error.message || 'Nepavyko išsiųsti el. laiško' 
+      error: error.message || 'Nepavyko išsiųsti kvietimo' 
     };
   }
 };
@@ -36,31 +37,24 @@ export const sendRedemptionStatusEmail = async (
   comment?: string
 ) => {
   try {
-    // Update user metadata to trigger email notification
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        notification: {
-          type: 'redemption_status',
-          name,
-          prizeName,
-          status,
-          comment,
-          timestamp: new Date().toISOString()
-        }
-      }
+    const statusText = status === 'approved' ? 'patvirtintas' : 'atmestas';
+    const html = `
+      <h2>Prizo iškeitimo statusas</h2>
+      <p>Sveiki, ${name}!</p>
+      <p>Jūsų prizo "${prizeName}" iškeitimo prašymas buvo ${statusText}.</p>
+      ${comment ? `<p>Komentaras: ${comment}</p>` : ''}
+      <p>Dėkojame už dalyvavimą!</p>
+    `;
+
+    return sendEmail({
+      to: userId, // This should be email, but keeping for compatibility
+      subject: `Prizo iškeitimo statusas: ${statusText}`,
+      html,
     });
-
-    if (error) {
-      console.error('Error sending redemption status notification:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
   } catch (error: any) {
-    console.error('Failed to send redemption status notification:', error);
     return { 
       success: false, 
-      error: error.message || 'Nepavyko išsiųsti pranešimo' 
+      error: error.message || 'Nepavyko išsiųsti el. laiško' 
     };
   }
 };
@@ -72,27 +66,11 @@ export const sendPointsDeductionEmail = async (
   reason: string
 ) => {
   try {
-    // Get admin user to check notification settings
-    const { data: adminData, error: adminError } = await supabase
-      .from('users')
-      .select('user_metadata')
-      .eq('email', adminEmail)
-      .single();
-
-    if (adminError) throw adminError;
-
-    // Check if points deduction notifications are enabled
-    const settings = adminData?.user_metadata?.notificationSettings;
-    if (!settings?.pointsDeductions) {
-      console.log('Points deduction notifications are disabled for this admin');
-      return { success: true };
-    }
-
     const html = `
       <h2>Taškų atėmimas</h2>
-      <p>Naudotojui ${userName} buvo atimta ${points} taškų.</p>
+      <p>Iš naudotojo ${userName} buvo atimta ${points} taškų.</p>
       <p>Priežastis: ${reason}</p>
-      <p>Galite peržiūrėti detalesnę informaciją administratoriaus skydelyje.</p>
+      <p>Šis veiksmas buvo atliktas automatiškai.</p>
     `;
 
     return sendEmail({
@@ -101,7 +79,6 @@ export const sendPointsDeductionEmail = async (
       html,
     });
   } catch (error: any) {
-    console.error('Failed to send points deduction email:', error);
     return { 
       success: false, 
       error: error.message || 'Nepavyko išsiųsti el. laiško' 
@@ -124,7 +101,6 @@ export const sendEmail = async (data: EmailData) => {
     if (error) throw error;
     return { error: null };
   } catch (error: any) {
-    console.error('Email sending error:', error);
     return { error: error.message || 'Failed to send email' };
   }
 };
@@ -137,21 +113,10 @@ export const sendPrizeRedemptionEmail = async (
   redemptionId: string
 ) => {
   try {
-    console.log('About to call send-prize-notification-emailjs edge function with:', {
-      adminEmail,
-      userName,
-      userEmail,
-      prizeName,
-      redemptionId
-    });
-
-    // Check if user is authenticated
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    console.log('Current auth state:', { 
-      user: authData?.user?.id, 
-      email: authData?.user?.email,
-      authError 
-    });
+    if (authError) {
+      return { success: false, error: `Authentication error: ${authError.message}` };
+    }
 
     const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
       body: {
@@ -163,23 +128,16 @@ export const sendPrizeRedemptionEmail = async (
       }
     });
 
-    console.log('Edge function response:', { emailResult, emailError });
-
     if (emailError) {
-      console.error('Failed to send prize notification email:', emailError);
       return { success: false, error: `Edge function error: ${emailError.message}` };
     }
 
     if (emailResult?.success) {
-      console.log('Prize notification email sent successfully via edge function');
       return { success: true };
     }
 
-    // If we get here, there was no error but also no success
-    console.error('Edge function returned unexpected result:', emailResult);
     return { success: false, error: emailResult?.error || 'Unknown error sending email' };
   } catch (error: any) {
-    console.error('Failed to send prize notification email:', error);
     return { 
       success: false, 
       error: `Exception: ${error.message || 'Nepavyko išsiųsti el. laiško'}` 
@@ -189,7 +147,6 @@ export const sendPrizeRedemptionEmail = async (
 
 export const sendNewUserRegistrationEmail = async (adminEmail: string, userName: string) => {
   try {
-    // Get admin user to check notification settings
     const { data: adminData, error: adminError } = await supabase
       .from('users')
       .select('user_metadata')
@@ -198,10 +155,8 @@ export const sendNewUserRegistrationEmail = async (adminEmail: string, userName:
 
     if (adminError) throw adminError;
 
-    // Check if new user registration notifications are enabled
     const settings = adminData?.user_metadata?.notificationSettings;
     if (!settings?.newUserRegistrations) {
-      console.log('New user registration notifications are disabled for this admin');
       return { success: true };
     }
 
@@ -217,7 +172,6 @@ export const sendNewUserRegistrationEmail = async (adminEmail: string, userName:
       html,
     });
   } catch (error: any) {
-    console.error('Failed to send new user registration email:', error);
     return { 
       success: false, 
       error: error.message || 'Nepavyko išsiųsti el. laiško' 
@@ -227,7 +181,6 @@ export const sendNewUserRegistrationEmail = async (adminEmail: string, userName:
 
 export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: string) => {
   try {
-    // Get admin user to check notification settings
     const { data: adminData, error: adminError } = await supabase
       .from('users')
       .select('user_metadata')
@@ -236,10 +189,8 @@ export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: s
 
     if (adminError) throw adminError;
 
-    // Check if system update notifications are enabled
     const settings = adminData?.user_metadata?.notificationSettings;
     if (!settings?.systemUpdates) {
-      console.log('System update notifications are disabled for this admin');
       return { success: true };
     }
 
@@ -255,7 +206,6 @@ export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: s
       html,
     });
   } catch (error: any) {
-    console.error('Failed to send system update email:', error);
     return { 
       success: false, 
       error: error.message || 'Nepavyko išsiųsti el. laiško' 
@@ -263,118 +213,38 @@ export const sendSystemUpdateEmail = async (adminEmail: string, updateMessage: s
   }
 };
 
-export const testEmailSending = async (email: string) => {
+export const sendUserPrizeStatusNotification = async (
+  userEmail: string,
+  userName: string,
+  prizeName: string,
+  status: 'confirmed' | 'rejected',
+  redemptionId: string,
+  rejectionReason?: string,
+  adminMessage?: string
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: 'Testinis el. laiškas',
-        html: `
-          <h1>Testinis el. laiškas</h1>
-          <p>Šis yra testinis el. laiškas, skirtas patikrinti el. pašto siuntimo funkcionalumą.</p>
-          <p>Jei gavote šį laišką, tai reiškia, kad el. pašto siuntimas veikia tinkamai.</p>
-        `,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Nepavyko išsiųsti el. laiško');
-    }
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error sending test email:', error);
-    return { error: error.message || 'Nepavyko išsiųsti el. laiško' };
-  }
-};
-
-export const testPrizeNotificationEmail = async (adminEmail: string) => {
-  try {
-    const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-prize-notification-emailjs', {
+    const { data, error } = await supabase.functions.invoke('send-user-prize-status-notification', {
       body: {
-        adminEmail: adminEmail,
-        userName: 'Test User',
-        userEmail: 'test@example.com',
-        prizeName: 'Test Prize',
-        redemptionId: 'test-redemption-123'
+        userEmail,
+        userName,
+        prizeName,
+        status,
+        redemptionId,
+        rejectionReason,
+        adminMessage
       }
     });
 
-    if (emailError) {
-      console.error('Failed to send test prize notification email:', emailError);
-      return { success: false, error: emailError.message };
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    if (emailResult?.success) {
-      console.log('Test prize notification email sent successfully via edge function');
-      return { success: true };
+    if (!data.success) {
+      return { success: false, error: data.error };
     }
 
-    return { success: false, error: 'Unknown error sending test email' };
-  } catch (error: any) {
-    console.error('Failed to send test prize notification email:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Nepavyko išsiųsti testinio el. laiško' 
-    };
-  }
-};
-
-export const testPrizeNotificationEmailDirect = async (adminEmail: string) => {
-  try {
-    // Get the current user session to include auth headers
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    console.log('Testing direct HTTP call to edge function with headers:', headers);
-
-    const response = await fetch('https://gvitpmixijacetppzusx.supabase.co/functions/v1/send-prize-notification-emailjs', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        adminEmail: adminEmail,
-        userName: 'Direct Test User',
-        userEmail: 'directtest@example.com',
-        prizeName: 'Direct Test Prize',
-        redemptionId: 'direct-test-123'
-      })
-    });
-
-    const responseText = await response.text();
-    console.log('Direct HTTP response:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
-      body: responseText
-    });
-
-    if (!response.ok) {
-      return { 
-        success: false, 
-        error: `HTTP ${response.status}: ${responseText}` 
-      };
-    }
-
-    const result = JSON.parse(responseText);
-    return result;
-  } catch (error: any) {
-    console.error('Direct HTTP test failed:', error);
-    return { 
-      success: false, 
-      error: `Direct test error: ${error.message}` 
-    };
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message || 'Unknown error' };
   }
 }; 
