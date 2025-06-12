@@ -77,13 +77,16 @@ export const AuthService = {
           .eq('link_token', metadata.linkToken)
           .single();
         if (linkRow) {
-          await supabase
+          const { error: usageInsertError } = await supabase
             .from('registration_link_usages')
             .insert({
               link_id: linkRow.id,
               user_id: data.user.id,
               used_at: new Date().toISOString(),
             });
+          if (usageInsertError) {
+            console.error('Failed to insert registration_link_usages:', usageInsertError);
+          }
         }
       }
 
