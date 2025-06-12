@@ -149,7 +149,7 @@ const Prizes: React.FC = () => {
               <Card key={prize.id} className="h-[420px] flex flex-col justify-between">
                 <div>
                   {prize.imageUrl && (
-                    <img src={prize.imageUrl} alt={prize.name} className="w-full h-40 object-cover rounded-t mb-2" />
+                    <img src={prize.imageUrl} alt={prize.name} className="w-full h-60 object-cover rounded-t mb-2" />
                   )}
                   <div className="px-6 pt-2 pb-0">
                     <CardTitle className="text-lg font-bold mb-1">{prize.name}</CardTitle>
