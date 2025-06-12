@@ -31,7 +31,7 @@ export const inviteUser = async (
   email: string,
   name: string,
   role: 'admin' | 'user',
-  registrationLink: { link_token: string; points: number }
+  registrationLink: { id: string; link_token: string; points: number }
 ): Promise<{success: boolean, registrationUrl?: string, emailSent?: boolean}> => {
   try {
     // Check if user already exists using our secure function
@@ -46,8 +46,20 @@ export const inviteUser = async (
       throw new Error('Nepavyko nustatyti dabartinio naudotojo');
     }
     
-    // Generate registration URL with both token and email parameters
-    const registrationUrl = `${window.location.origin}/register?token=${registrationLink.link_token}&email=${encodeURIComponent(email)}`;
+    // Create a user invitation using the new system
+    const { data: invitation, error: invitationError } = await supabase.rpc('create_user_invitation', {
+      parent_link_id_param: registrationLink.id,
+      invited_email_param: email,
+      invited_name_param: name,
+      creator_id_param: user.id
+    });
+    
+    if (invitationError) {
+      throw new Error(invitationError.message || 'Failed to create invitation');
+    }
+    
+    // Generate registration URL with the unique invitation token
+    const registrationUrl = `${window.location.origin}/register?token=${invitation.invitation_token}&email=${encodeURIComponent(email)}`;
     
     // Try to send email via Edge Function
     let emailSent = false;
@@ -57,10 +69,10 @@ export const inviteUser = async (
           to_email: email,
           user_name: name,
           registrationUrl: registrationUrl,
-          points: registrationLink.points,
+          points: invitation.points,
           email_type: 'registration_invite',
           adminEmail: user.email,
-          companyName: 'Vilnius Coding School', // Optionally fetch from settings
+          companyName: 'Vilnius Coding School',
           year: new Date().getFullYear().toString(),
         }
       });

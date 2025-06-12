@@ -53,9 +53,8 @@ interface RegistrationLink {
   created_by: string;
   link_token: string;
   is_active: boolean;
-  used_at: string | null;
-  used_by: string | null;
   points: number;
+  invited_email: string | null;
 }
 
 const Admin: React.FC = () => {
@@ -526,6 +525,34 @@ const Admin: React.FC = () => {
     }
   };
 
+  const activateRegistrationLink = async (linkId: string) => {
+    try {
+      const { error } = await supabase
+        .from('registration_links')
+        .update({ is_active: true })
+        .eq('id', linkId);
+
+      if (error) throw error;
+
+      setRegistrationLinks(prev =>
+        prev.map(link =>
+          link.id === linkId ? { ...link, is_active: true } : link
+        )
+      );
+
+      toast({
+        title: 'Nuoroda aktyvuota',
+        description: 'Registracijos nuoroda sėkmingai aktyvuota',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Klaida',
+        description: error.message || 'Nepavyko aktyvuoti nuorodos',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDeductPoints = async () => {
     if (!selectedUserForDeduction || !pointsToDeduct || !deductionReason) {
       toast({
@@ -781,50 +808,70 @@ const Admin: React.FC = () => {
                                 </Button>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={link.is_active ? 'default' : 'secondary'}>
-                                  {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
-                                </Badge>
+                                <div className="space-y-1">
+                                  <Badge variant={link.is_active ? 'default' : 'secondary'}>
+                                    {link.is_active ? 'Aktyvi' : 'Neaktyvi'}
+                                  </Badge>
+                                  {link.invited_email && (
+                                    <div className="text-xs text-gray-500">
+                                      Skirta: {link.invited_email}
+                                    </div>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <span className="point-badge">{link.points} taškų</span>
                               </TableCell>
                               <TableCell>
-                                {link.is_active && (
+                                <div className="flex gap-2">
+                                  {link.is_active ? (
+                                    // Active links can be deactivated
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => deactivateRegistrationLink(link.id)}
+                                    >
+                                      Deaktyvuoti
+                                    </Button>
+                                  ) : (
+                                    // Inactive links can be activated
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      onClick={() => activateRegistrationLink(link.id)}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      Aktyvuoti
+                                    </Button>
+                                  )}
                                   <Button
-                                    variant="destructive"
+                                    variant="outline"
                                     size="sm"
-                                    onClick={() => deactivateRegistrationLink(link.id)}
+                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                    onClick={async () => {
+                                      try {
+                                        const { error } = await supabase
+                                          .from('registration_links')
+                                          .delete()
+                                          .eq('id', link.id);
+                                        if (error) throw error;
+                                        setRegistrationLinks(prev => prev.filter(l => l.id !== link.id));
+                                        toast({
+                                          title: 'Nuoroda ištrinta',
+                                          description: 'Registracijos nuoroda pašalinta iš duomenų bazės',
+                                        });
+                                      } catch (error) {
+                                        toast({
+                                          title: 'Klaida',
+                                          description: error.message || 'Nepavyko ištrinti nuorodos',
+                                          variant: 'destructive',
+                                        });
+                                      }
+                                    }}
                                   >
-                                    Deaktyvuoti
+                                    Ištrinti
                                   </Button>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="ml-2 text-red-600 border-red-300 hover:bg-red-50"
-                                  onClick={async () => {
-                                    try {
-                                      const { error } = await supabase
-                                        .from('registration_links')
-                                        .delete()
-                                        .eq('id', link.id);
-                                      if (error) throw error;
-                                      setRegistrationLinks(prev => prev.filter(l => l.id !== link.id));
-                                      toast({
-                                        title: 'Nuoroda ištrinta',
-                                        description: 'Registracijos nuoroda pašalinta iš duomenų bazės',
-                                      });
-                                    } catch (error) {
-                                      toast({
-                                        title: 'Klaida',
-                                        description: error.message || 'Nepavyko ištrinti nuorodos',
-                                        variant: 'destructive',
-                                      });
-                                    }
-                                  }}
-                                >
-                                  Ištrinti
-                                </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );

@@ -67,7 +67,6 @@ export interface RegistrationLink {
   created_by: string;
   link_token: string;
   is_active: boolean;
-  used_at: string | null;
-  used_by: string | null;
   points: number;
+  invited_email: string | null;
 }

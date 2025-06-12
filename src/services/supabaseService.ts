@@ -90,7 +90,19 @@ export const createProfile = async (profile: {
 };
 
 export const deleteUser = async (userId: string) => {
-  return supabase.auth.admin.deleteUser(userId);
+  const { data, error } = await supabase.functions.invoke('delete-user', {
+    body: { userId }
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to delete user');
+  }
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to delete user');
+  }
+
+  return { data, error: null };
 };
 
 export const updateUserPoints = async (userId: string, newPoints: number) => {
