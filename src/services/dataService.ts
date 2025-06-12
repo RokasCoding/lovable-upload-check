@@ -53,11 +53,12 @@ export const inviteUser = async (
         body: {
           to_email: email,
           user_name: name,
-          invite_link: registrationUrl,
-          invite_points: registrationLink.points,
+          registrationUrl: registrationUrl,
+          points: registrationLink.points,
           email_type: 'registration_invite',
-          admin_email: user.email,
-          company_name: 'Vilnius Coding School', // Optionally fetch from settings
+          adminEmail: user.email,
+          companyName: 'Vilnius Coding School', // Optionally fetch from settings
+          year: new Date().getFullYear().toString(),
         }
       });
       if (emailError) {
